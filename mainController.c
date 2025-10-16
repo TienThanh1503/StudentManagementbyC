@@ -1343,16 +1343,23 @@ void saveTextFile(ArrayList *s) {
     printf("Data saved successfully to %s\n", fileName);
 }
 
+#define MAX_LINE 1024  // tăng đủ dài
+
+static void trim(char *s){
+    char *p = s;
+    while (*p && isspace((unsigned char)*p)) p++;
+    if (p != s) memmove(s, p, strlen(p)+1);
+    char *e = s + strlen(s);
+    while (e > s && isspace((unsigned char)e[-1])) *--e = '\0';
+}
+
 void loadTextFile(ArrayList *s) {
     char fileName[256];
     printf("Enter file name to load: ");
     read_line(fileName, sizeof(fileName));
     trim_inplace(fileName);
 
-    if (!file_exists(fileName)) {
-        printf("File not found!\n");
-        return;
-    }
+    if (!file_exists(fileName)) { printf("File not found!\n"); return; }
 
     FILE *fp = fopen(fileName, "r");
     if (!fp) { perror("fopen"); return; }
@@ -1360,47 +1367,55 @@ void loadTextFile(ArrayList *s) {
     clearList(s);
 
     char line[MAX_LINE];
-    // Skip 3 header lines
-    fgets(line, sizeof(line), fp);
-    fgets(line, sizeof(line), fp);
-    fgets(line, sizeof(line), fp);
+
+    /* Skip 3–4 dòng header: (=====), (tiêu đề), (-----), (có thể có dòng trống) */
+    for (int i = 0; i < 4; ++i) {
+        long pos = ftell(fp);
+        if (!fgets(line, sizeof(line), fp)) break;
+        if (line[0] != '=' && line[0] != '-' && line[0] != '\n' && line[0] != '\r')
+        { fseek(fp, pos, SEEK_SET); break; }  // không phải header thì quay lại
+    }
 
     while (fgets(line, sizeof(line), fp)) {
-        if (line[0] == '=' || line[0] == '-' || line[0] == '\n') continue;
+        // bỏ qua các dòng phân cách
+        if (line[0] == '=' || line[0] == '-' || line[0] == '\n' || line[0] == '\r') continue;
 
-        char tmp[MAX_LINE];
-        strncpy(tmp, line, sizeof(tmp)-1);
-        tmp[sizeof(tmp)-1] = '\0';
+        // cấu trúc dòng:
+        // | No | ID | Name | Gender | Class | DOB | Email | Score |
+        int no;
+        Student stu; memset(&stu, 0, sizeof(stu));
+        char id[32], name[128], gender[16], cls[32], dob[32], email[128];
+        double score;
 
-        char *parts[16]; int pc = 0;
-        char *tok = strtok(tmp, "|");
-        while (tok && pc < 16) {
-            while (isspace((unsigned char)*tok)) tok++;
-            char *end = tok + strlen(tok);
-            while (end > tok && isspace((unsigned char)end[-1])) *--end = '\0';
-            parts[pc++] = tok;
-            tok = strtok(NULL, "|");
+        int n = sscanf(line,
+            " | %d | %31[^|] | %127[^|] | %15[^|] | %31[^|] | %31[^|] | %127[^|] | %lf |",
+            &no, id, name, gender, cls, dob, email, &score);
+
+        if (n != 8) {
+            /* debug (nếu cần):
+            fprintf(stderr, "[WARN] parse fail (got %d): %s", n, line);
+            */
+            continue;
         }
 
-        if (pc < 8) continue;
+        // trim từng trường
+        trim(id); trim(name); trim(gender); trim(cls); trim(dob); trim(email);
 
-        Student stu;
-        memset(&stu, 0, sizeof(stu));
-
-        strncpy(stu.ID,     parts[1], sizeof(stu.ID)-1);
-        strncpy(stu.Name,   parts[2], sizeof(stu.Name)-1);
-        strncpy(stu.gender, parts[3], sizeof(stu.gender)-1);
-        strncpy(stu.Class,  parts[4], sizeof(stu.Class)-1);
-        strncpy(stu.DOB,    parts[5], sizeof(stu.DOB)-1);
-        strncpy(stu.email,  parts[6], sizeof(stu.email)-1);
-        stu.Score = atof(parts[7]);
+        strncpy(stu.ID,     id,    sizeof(stu.ID)-1);
+        strncpy(stu.Name,   name,  sizeof(stu.Name)-1);
+        strncpy(stu.gender, gender,sizeof(stu.gender)-1);
+        strncpy(stu.Class,  cls,   sizeof(stu.Class)-1);
+        strncpy(stu.DOB,    dob,   sizeof(stu.DOB)-1);
+        strncpy(stu.email,  email, sizeof(stu.email)-1);
+        stu.Score = score;
 
         addStudentToList(s, stu);
     }
 
     fclose(fp);
-    printf("Loaded successfully! Total students: %d\n", s->size);
+    printf("✅ Loaded successfully! Total students: %d\n", s->size);
 }
+
 
 
 /* ------------ .csv ------------ */
