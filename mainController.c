@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
-#define MAX_LINE 50
+#define MAX_LINE 1024
 // =================== STRUCT DEFINITION ===================
 typedef struct {
     char ID[20];
@@ -548,11 +548,11 @@ char *Class(void) {
     do {
         check = 0;
         printf("Enter Class: \n");
-        read_line(buf, sizeof(buf)); // Java version didn’t trim here
+        read_line(buf, sizeof(buf)); 
 
         if (hasSpecialChar(buf, "0123456789")) {
             check = 1;
-            printf("ID cannot contain special characters!\n\n"); // keep the same message as in Java version	
+            printf("ID cannot contain special characters!\n\n"); 
         }
         if ((int)strlen(buf) > 8) {
             printf("Name is too long! Please enter a shorter one.\n");
@@ -572,7 +572,7 @@ double Score(void) {
     do {
         check = 0;
         printf("Enter Score: \n");
-        read_line(buf, sizeof(buf)); // Java doesn't trim
+        read_line(buf, sizeof(buf));
 
         if (!only_digits_dot_dash(buf)) {
             check = 1;
@@ -1343,8 +1343,6 @@ void saveTextFile(ArrayList *s) {
     printf("Data saved successfully to %s\n", fileName);
 }
 
-#define MAX_LINE 1024  // tăng đủ dài
-
 static void trim(char *s){
     char *p = s;
     while (*p && isspace((unsigned char)*p)) p++;
@@ -1363,8 +1361,6 @@ void loadTextFile(ArrayList *s) {
 
     FILE *fp = fopen(fileName, "r");
     if (!fp) { perror("fopen"); return; }
-
-    clearList(s);
 
     char line[MAX_LINE];
 
@@ -1415,6 +1411,7 @@ void loadTextFile(ArrayList *s) {
     fclose(fp);
     printf("✅ Loaded successfully! Total students: %d\n", s->size);
 }
+
 
 
 
@@ -1482,9 +1479,6 @@ void loadCSVFile(ArrayList *s) {
     read_line(fileName, sizeof(fileName));
     trim_inplace(fileName);
 
-    if (strlen(fileName) < 4 || strcmp(fileName + strlen(fileName) - 4, ".csv") != 0) {
-        strncat(fileName, ".csv", sizeof(fileName) - strlen(fileName) - 1);
-    }
     if (!file_exists(fileName)) {
         printf("File not found!\n");
         return;
@@ -1493,50 +1487,42 @@ void loadCSVFile(ArrayList *s) {
     FILE *fp = fopen(fileName, "r");
     if (!fp) { perror("fopen"); return; }
 
-    clearList(s);
-
-    char line[MAX_LINE];
-    /* skip header */
-    if (!fgets(line, sizeof(line), fp)) {
-        fclose(fp);
-        printf("File is empty!\n");
-        return;
-    }
+    char line[1024];
+    // Bỏ dòng tiêu đề
+    fgets(line, sizeof(line), fp);
 
     while (fgets(line, sizeof(line), fp)) {
-        if (line[0] == '\n' || line[0] == '\0') continue;
+        if (line[0] == '\n' || line[0] == '\r') continue;
 
-        /* split by comma (safe because we removed commas from fields on save) */
-        char tmp[MAX_LINE];
-        strncpy(tmp, line, sizeof(tmp)-1); tmp[sizeof(tmp)-1] = '\0';
+        Student stu;
+        memset(&stu, 0, sizeof(stu));
 
-        char *parts[16]; int pc = 0;
-        char *tok = strtok(tmp, ",");
-        while (tok && pc < 16) {
-            while (*tok && isspace((unsigned char)*tok)) tok++;
-            char *end = tok + strlen(tok);
-            while (end > tok && isspace((unsigned char)end[-1])) *--end = '\0';
-            parts[pc++] = tok;
-            tok = strtok(NULL, ",");
-        }
-        if (pc < 8) continue;
+        // Giả sử CSV: ID,Name,Gender,Class,DOB,Email,Score
+        char *id = strtok(line, ",");
+        char *name = strtok(NULL, ",");
+        char *gender = strtok(NULL, ",");
+        char *cls = strtok(NULL, ",");
+        char *dob = strtok(NULL, ",");
+        char *email = strtok(NULL, ",");
+        char *scoreStr = strtok(NULL, ",\n\r");
 
-        Student stu; memset(&stu, 0, sizeof(stu));
-        /* No.,ID,Name,Gender,Class,Date of Birth,Email,Score */
-        strncpy(stu.ID,     parts[1], sizeof(stu.ID)-1);
-        strncpy(stu.Name,   parts[2], sizeof(stu.Name)-1);
-        strncpy(stu.gender, parts[3], sizeof(stu.gender)-1);
-        strncpy(stu.Class,  parts[4], sizeof(stu.Class)-1);
-        strncpy(stu.DOB,    parts[5], sizeof(stu.DOB)-1);
-        strncpy(stu.email,  parts[6], sizeof(stu.email)-1);
+        if (!id || !name || !gender || !cls || !dob || !email || !scoreStr)
+            continue; // dòng lỗi
 
-        char *endp = NULL;
-        stu.Score = strtod(parts[7], &endp);
-        if (endp == parts[7]) stu.Score = 0.0;
+        trim_inplace(id); trim_inplace(name); trim_inplace(gender);
+        trim_inplace(cls); trim_inplace(dob); trim_inplace(email); trim_inplace(scoreStr);
+
+        strncpy(stu.ID, id, sizeof(stu.ID)-1);
+        strncpy(stu.Name, name, sizeof(stu.Name)-1);
+        strncpy(stu.gender, gender, sizeof(stu.gender)-1);
+        strncpy(stu.Class, cls, sizeof(stu.Class)-1);
+        strncpy(stu.DOB, dob, sizeof(stu.DOB)-1);
+        strncpy(stu.email, email, sizeof(stu.email)-1);
+        stu.Score = atof(scoreStr);
 
         addStudentToList(s, stu);
     }
 
     fclose(fp);
-    printf("Loaded successfully! Total students: %d\n", s->size);
+    printf("✅ Loaded successfully! Total students: %d\n", s->size);
 }
