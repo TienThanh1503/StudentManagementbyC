@@ -117,7 +117,7 @@ int main() {
     return 0;
 }
 
-// ========================= MENU HIỂN THỊ =========================
+// ========================= DISPLAY MENU =========================
 void showMenu() {
     printf("\n=== Student Management System ===\n");
     printf("1. Add Student\n");
@@ -131,59 +131,59 @@ void showMenu() {
     printf("0. Exit\n");
     printf("Enter your choice: ");
 }
-// ========================= XỬ LÝ LỰA CHỌN =========================
-// prototype (đặt trước main)
+// ========================= HANDLE CHOICE =========================
+// prototype (placed before main)
 void handleChoice(ArrayList *students, char *choice);
 
 // implement
 void handleChoice(ArrayList *students, char *choice) {
     switch (choice[0]) {
         case '1': {
-            // addStudent nhận ArrayList* và trả về Student
+            // addStudent takes ArrayList* and returns a Student
             Student s = addStudent(students);
             addStudentToList(students, s);
-            printf("✅ Add a student successfully!\n");
+            printf("Add a student successfully!\n");
             break;
         }
         case '2':
-            // displayStudents nhận ArrayList*
+            // displayStudents takes ArrayList*
             displayStudents("all", "", "", students);
             break;
 
         case '3':
-            // search nhận ArrayList*
+            // search takes ArrayList*
             search(students);
             break;
 
         case '4':
-            // hàm xóa trong C là 'delete' (không phải deleteStudent)
+            // the delete function in C is 'delete' (not deleteStudent)
             delete(students);
             break;
 
         case '5':
-            // update nhận ArrayList*
+            // update takes ArrayList*
             update(students);
             break;
 
         case '6':
-            // sort nhận ArrayList*
+            // sort takes ArrayList*
             sort(students);
             break;
 
         case '7':
-            // saveFile nhận ArrayList*
+            // saveFile takes ArrayList*
             saveFile(students);
             break;
 
         case '8':
-            // loadFile nhận ArrayList*
+            // loadFile takes ArrayList*
             loadFile(students);
             break;
 
         case '0': {
             char ans[10];
             printf("Do you want to save before exit? (y/n): ");
-            read_line(ans, sizeof(ans));          // dùng tiện ích đã có
+            read_line(ans, sizeof(ans));          // use existing utility function
             if (ans[0] == 'y' || ans[0] == 'Y') {
                 saveFile(students);
             }
@@ -291,29 +291,29 @@ int hasSpecialChar(const char *str, const char *except) {
 }
 
 char *capitalize(const char *str_in) {
-    // hạ hết lowercase, tách theo khoảng trắng liên tiếp, viết hoa chữ đầu mỗi từ, nối bằng 1 space, trim cuối
+    // convert all to lowercase, split by continuous spaces, capitalize first letter of each word, join with single space, trim trailing spaces
     size_t n = strlen(str_in);
     char *tmp = dupstr(str_in);
     for (size_t i = 0; i < n; ++i) tmp[i] = (char)tolower((unsigned char)tmp[i]);
 
-    char *out = (char*)malloc(n + 1); // kết quả không dài hơn đầu vào
+    char *out = (char*)malloc(n + 1); // result won't be longer than input
     if (!out) exit(1);
     out[0] = '\0';
 
     size_t i = 0, outlen = 0;
     while (tmp[i]) {
-        // bỏ các khoảng trắng
+        // skip spaces
         while (isspace((unsigned char)tmp[i])) i++;
         if (!tmp[i]) break;
 
-        // ghi space giữa các từ nếu cần
+        // add a space between words if needed
         if (outlen > 0) out[outlen++] = ' ';
 
-        // xử lý một từ
+        // process one word
         if (isalpha((unsigned char)tmp[i])) {
             out[outlen++] = (char)toupper((unsigned char)tmp[i++]);
         } else {
-            out[outlen++] = tmp[i++]; // nếu ký tự đầu không phải chữ, vẫn giữ nguyên (ít xảy ra)
+            out[outlen++] = tmp[i++]; // if the first character is not a letter, keep it (rare case)
         }
         while (tmp[i] && !isspace((unsigned char)tmp[i])) {
             out[outlen++] = tmp[i++];
@@ -392,7 +392,7 @@ ArrayList copyList(const ArrayList *src) {
     return dst;
 }
 
-/* helpers for "last name" (tách từ cuối của Name) */
+/* helpers for "last name" (extract last word from Name) */
 void last_name(const char *full, char *out, size_t out_sz) {
     out[0] = '\0';
     size_t len = strlen(full);
@@ -548,11 +548,11 @@ char *Class(void) {
     do {
         check = 0;
         printf("Enter Class: \n");
-        read_line(buf, sizeof(buf)); // Java không trim ở đây
+        read_line(buf, sizeof(buf)); // Java version didn’t trim here
 
         if (hasSpecialChar(buf, "0123456789")) {
             check = 1;
-            printf("ID cannot contain special characters!\n\n"); // giữ nguyên message như Java
+            printf("ID cannot contain special characters!\n\n"); // keep the same message as in Java version	
         }
         if ((int)strlen(buf) > 8) {
             printf("Name is too long! Please enter a shorter one.\n");
@@ -572,7 +572,7 @@ double Score(void) {
     do {
         check = 0;
         printf("Enter Score: \n");
-        read_line(buf, sizeof(buf)); // Java không trim
+        read_line(buf, sizeof(buf)); // Java doesn't trim
 
         if (!only_digits_dot_dash(buf)) {
             check = 1;
@@ -617,7 +617,7 @@ char *DOB(void) {
             continue;
         }
 
-        // tách dd/mm/yyyy
+        // split dd/mm/yyyy
         char tmp[MAX_LINE];
         strncpy(tmp, dob, sizeof(tmp));
         tmp[sizeof(tmp)-1] = '\0';
@@ -674,7 +674,7 @@ char *DOB(void) {
         }
     } while (check);
 
-    // pad dd, mm về 2 ký tự
+    // pad dd, mm to 2 characters
     if (strlen(mm) == 1) { char t[3] = "0"; strncat(t, mm, 1); strcpy(mm, t); }
     if (strlen(dd) == 1) { char t[3] = "0"; strncat(t, dd, 1); strcpy(dd, t); }
 
@@ -705,7 +705,7 @@ char *email(void) {
         char *dot = strrchr(buf, '.');
         if (!dot || dot < at) { printf("Invalid email format! Example: example@gmail.com\n"); check = 1; continue; }
 
-        // chỉ cho phép 1 '@'
+        // only allow 1 '@'
         if (strchr(at + 1, '@')) { printf("Invalid email format! Example: example@gmail.com\n"); check = 1; continue; }
 
         // local part
@@ -765,7 +765,7 @@ char *gender(void) {
         } else if (strcmp(buf, "other") == 0 || strcmp(buf, "o") == 0) {
             return dupstr("Other");
         } else {
-            printf("❌ Invalid gender! Please enter Male, Female or Other.\n");
+            printf("Invalid gender! Please enter Male, Female or Other.\n");
             check = 1;
         }
     } while (check);
@@ -877,7 +877,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
 
             free(cNo2); free(cID2); free(cGender2); free(cClass2); free(cDOB2); free(cScore2);
 
-            if (strcmp(option, "ID") == 0) break; /* ID là duy nhất */
+            if (strcmp(option, "ID") == 0) break; /* ID is unique */
         }
     }
 
@@ -1082,7 +1082,7 @@ void delete(ArrayList *s) {
         return;
     }
 
-    printf("❌ Invalid choice!\n");
+    printf("Invalid choice!\n");
 }
 
 void update(ArrayList *s) {
@@ -1109,7 +1109,7 @@ void update(ArrayList *s) {
         return;
     }
 
-    /* Hiển thị thông tin hiện tại */
+    /* Display current information */
     displayStudents("ID", IDbuf, "=", s);
 
     printf("\n=== UPDATE MENU ===\n");
@@ -1212,7 +1212,7 @@ void sort(ArrayList *s) {
         displayStudents("all", "", "", &s_copy);
     }
     else {
-        printf("❌ Invalid choice!\n");
+        printf("Invalid choice!\n");
     }
 
     free(s_copy.data);
@@ -1420,16 +1420,16 @@ void saveCSVFile(ArrayList *s) {
 
     int append = 0;
     if (file_exists(fileName)) {
-        printf("⚠️ File '%s' already exists.\n", fileName);
+        printf("File '%s' already exists.\n", fileName);
         if (ask_yes_no("Do you want to overwrite it? (y/n): ")) {
             FILE *fp = fopen(fileName, "w"); if (fp) fclose(fp);
-            printf("🧹 Old data cleared.\n");
+            printf(" Old data cleared.\n");
         } else {
             append = 1;
-            printf("📎 Data will be appended to existing file.\n");
+            printf(" Data will be appended to existing file.\n");
         }
     } else {
-        printf("✅ Will create: %s\n", fileName);
+        printf("Will create: %s\n", fileName);
     }
 
     FILE *fp = fopen(fileName, append ? "a" : "w");
@@ -1455,7 +1455,7 @@ void saveCSVFile(ArrayList *s) {
     }
 
     fclose(fp);
-    printf("💾 Data exported successfully to CSV file: %s\n", fileName);
+    printf("Data exported successfully to CSV file: %s\n", fileName);
 
     /* Try to open automatically */
     open_file_with_default_app(fileName);
@@ -1471,7 +1471,7 @@ void loadCSVFile(ArrayList *s) {
         strncat(fileName, ".csv", sizeof(fileName) - strlen(fileName) - 1);
     }
     if (!file_exists(fileName)) {
-        printf("❌ File not found!\n");
+        printf("File not found!\n");
         return;
     }
 
@@ -1484,7 +1484,7 @@ void loadCSVFile(ArrayList *s) {
     /* skip header */
     if (!fgets(line, sizeof(line), fp)) {
         fclose(fp);
-        printf("⚠️ File is empty!\n");
+        printf("File is empty!\n");
         return;
     }
 
