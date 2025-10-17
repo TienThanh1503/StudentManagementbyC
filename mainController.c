@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <time.h>
 #define MAX_LINE 1024
 // =================== STRUCT DEFINITION ===================
 typedef struct {
@@ -95,6 +96,25 @@ void saveTextFile(ArrayList *s);
 void loadTextFile(ArrayList *s);
 void saveCSVFile(ArrayList *s);
 void loadCSVFile(ArrayList *s);
+//----------------------Systems------------------------------------
+void setting();
+void history();
+//-----------------operationHistory--------------------------------
+void OperationHistory_init(void);
+void OperationHistory_log(const char *action,
+                          const char *target,
+                          const char *desc,
+                          const char *status);
+void OperationHistory_close(void);
+void OperationHistory_clear();
+//--------------------Private state (internal)---------------------
+static FILE *fw = NULL;  
+static FILE *bw = NULL; 
+static const char *FILE_NAME = "operationHistory.csv"; 
+static int count = 0;    
+static int initialized = 0;
+static char description[256];
+
 //----------------------------main----------------------------------
 void showMenu(void);
 void handleChoice(ArrayList *students, char *choice);
@@ -128,6 +148,7 @@ void showMenu() {
     printf("6. Sort\n");
     printf("7. Save Data\n");
     printf("8. Load Data\n");
+    printf("9. Setting\n");
     printf("0. Exit\n");
     printf("Enter your choice: ");
 }
@@ -179,8 +200,10 @@ void handleChoice(ArrayList *students, char *choice) {
             // loadFile takes ArrayList*
             loadFile(students);
             break;
-
-        case '0': {
+        case '9':
+        	setting();
+        	break;
+		case '0':{
             char ans[10];
             printf("Do you want to save before exit? (y/n): ");
             read_line(ans, sizeof(ans));          // use existing utility function
@@ -774,18 +797,57 @@ char *gender(void) {
 }
 
 //================ StudentService Functions =========================================
+#include <string.h>
+#include <stdio.h>
+
 Student addStudent(ArrayList *students) {
     Student s;
     char *tmp;
 
-    tmp = ID(students->data, (size_t)students->size);  strncpy(s.ID,    tmp, sizeof(s.ID)-1);    s.ID[sizeof(s.ID)-1]=0;    free(tmp);
-    tmp = Name();                                       strncpy(s.Name,  tmp, sizeof(s.Name)-1);  s.Name[sizeof(s.Name)-1]=0; free(tmp);
-    tmp = gender();                                     strncpy(s.gender,tmp, sizeof(s.gender)-1);s.gender[sizeof(s.gender)-1]=0; free(tmp);
-    tmp = Class();                                      strncpy(s.Class, tmp, sizeof(s.Class)-1); s.Class[sizeof(s.Class)-1]=0; free(tmp);
-    tmp = DOB();                                        strncpy(s.DOB,   tmp, sizeof(s.DOB)-1);   s.DOB[sizeof(s.DOB)-1]=0;   free(tmp);
-    tmp = email();                                      strncpy(s.email, tmp, sizeof(s.email)-1); s.email[sizeof(s.email)-1]=0; free(tmp);
+    // ID
+    tmp = ID(students->data, (size_t)students->size);
+    strncpy(s.ID, tmp, sizeof(s.ID)-1);
+    s.ID[sizeof(s.ID)-1] = '\0';
+    free(tmp);
+
+    // >> VIẾT description BẰNG s.ID ĐÃ COPY (không dùng tmp đã free)
+    snprintf(description, sizeof(description), "Add student with ID=%s", s.ID);
+
+    // Name
+    tmp = Name();
+    strncpy(s.Name, tmp, sizeof(s.Name)-1);
+    s.Name[sizeof(s.Name)-1] = '\0';
+    free(tmp);
+
+    // Gender
+    tmp = gender();
+    strncpy(s.gender, tmp, sizeof(s.gender)-1);
+    s.gender[sizeof(s.gender)-1] = '\0';
+    free(tmp);
+
+    // Class
+    tmp = Class();
+    strncpy(s.Class, tmp, sizeof(s.Class)-1);
+    s.Class[sizeof(s.Class)-1] = '\0';
+    free(tmp);
+
+    // DOB
+    tmp = DOB();
+    strncpy(s.DOB, tmp, sizeof(s.DOB)-1);
+    s.DOB[sizeof(s.DOB)-1] = '\0';
+    free(tmp);
+
+    // Email
+    tmp = email();
+    strncpy(s.email, tmp, sizeof(s.email)-1);
+    s.email[sizeof(s.email)-1] = '\0';
+    free(tmp);
+
+    // Score
     s.Score = Score();
 
+    // LOG
+    OperationHistory_log("Add student", "Student", description, "OK");
     return s;
 }
 
@@ -829,6 +891,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
 
         if (strcmp(option, "all") == 0 && (data == NULL || *data == '\0')) {
             shouldDisplay = 1;
+            
         } else if (strcmp(option, "ID") == 0 && str_ieq(st->ID, data)) {
             shouldDisplay = 1;
         } else if (strcmp(option, "Name") == 0 && contains_ignore_case(st->Name, data)) {
@@ -883,7 +946,9 @@ void displayStudents(const char *option, const char *data, const char *compariso
 
     if (cnt == 0) {
         printf("No matching students found!\n");
+        OperationHistory_log("Display student", "Student", "Display all student", "OK");
     }
+    else OperationHistory_log("Display student", "Student", "Display all student", "OK");
 
     /* bottom bar */
     print_repeat('=', totalWidth);
@@ -1470,8 +1535,19 @@ void saveCSVFile(ArrayList *s) {
     printf("Data exported successfully to CSV file: %s\n", fileName);
 
     /* Try to open automatically */
-    open_file_with_default_app(fileName);
-}
+    printf("You want to open file ? (y/n)\n");
+    char choice[100];
+	fgets(choice, sizeof(choice), stdin);
+        choice[strcspn(choice, "\n")] = 0;
+	    switch (choice[0]) {
+        case 'y': {
+        	open_file_with_default_app(fileName);
+        	break;
+ 		}
+        default:
+            printf("Exiting...");
+        }
+    }
 
 void loadCSVFile(ArrayList *s) {
     char fileName[256];
@@ -1525,4 +1601,169 @@ void loadCSVFile(ArrayList *s) {
 
     fclose(fp);
     printf("✅ Loaded successfully! Total students: %d\n", s->size);
+}
+
+// ================== Setting =================================
+void setting(void){
+	printf("========Menu Setting===========\n");
+	printf("1. History\n");
+	printf("Enter your choice:\n");
+	char choice[100];
+	fgets(choice, sizeof(choice), stdin);
+        choice[strcspn(choice, "\n")] = 0;
+	    switch (choice[0]) {
+        case '1': {
+        	history();
+        	break;
+ 		}
+		case '0':
+            printf("Exiting...\n");
+            break;
+        default:
+            printf("Invalid choice!\n");
+        }
+}
+
+// =================== History ================================
+void history(void){
+	printf("Menu History: \n");
+	printf("1. Open operationHistory in Excel\n");
+	printf("2. Clear all data in operation History\n");
+	printf("Enter your choice:\n");
+	char choice[100];
+	fgets(choice, sizeof(choice), stdin);
+        choice[strcspn(choice, "\n")] = 0;
+	    switch (choice[0]) {
+        case '1': {
+        	open_file_with_default_app("operationHistory.csv");
+        	break;
+ 		}
+ 		case '2': {
+ 			OperationHistory_clear();
+			break;
+		 }
+		case '0':
+            printf("Exiting...\n");
+            break;
+        default:
+            printf("Invalid choice!\n");
+        }
+    }
+
+/* ========= Internal utilities (static) ========= */
+static void OperationHistory_at_exit(void) {
+    if (bw) {
+        fflush(bw);
+        fclose(bw);
+        bw = NULL;
+        fw = NULL;
+    }
+}
+
+static void current_time_str(char *buf, size_t n) {
+    time_t t = time(NULL);
+    struct tm tm_info;
+
+#if defined(_WIN32)
+    /* Windows: ưu tiên localtime_s; nếu toolchain không có, fallback về localtime */
+    #ifdef _MSC_VER
+        localtime_s(&tm_info, &t);
+    #else
+        struct tm *p = localtime(&t);   /* MinGW/Dev-C++ thường không có localtime_s/ localtime_r ổn định */
+        if (p) tm_info = *p;
+    #endif
+#else
+    /* POSIX (Linux/macOS): dùng localtime_r */
+    localtime_r(&t, &tm_info);
+#endif
+
+    strftime(buf, n, "%d/%m/%Y %H:%M:%S", &tm_info);
+}
+
+
+static void ensure_initialized(void) {
+    if (!initialized) OperationHistory_init();
+}
+/* ========= Public API impl ========= */
+void OperationHistory_init(void) {
+    if (initialized) return;
+
+    fw = fopen(FILE_NAME, "a+");     // tạo nếu chưa có, mở append
+    if (!fw) {
+        fprintf(stderr, "Error initializing file writer\n");
+        return;
+    }
+    bw = fw;
+
+    // Nếu file rỗng => ghi header
+    if (fseek(bw, 0, SEEK_END) == 0) {
+        long size = ftell(bw);
+        if (size == 0) {
+            fputs("No.,Time,Action,Target,Description,Status\n", bw);
+            fflush(bw);
+        } else {
+            // File KHÔNG rỗng => đọc số thứ tự cuối
+            fseek(bw, 0, SEEK_SET);
+
+            char line[512];
+            int lastNo = 0;
+
+            // Bỏ qua dòng header
+            fgets(line, sizeof(line), bw);
+
+            // Đọc từng dòng đến cuối file
+            while (fgets(line, sizeof(line), bw)) {
+                int no;
+                if (sscanf(line, "%d,", &no) == 1) {
+                    lastNo = no;
+                }
+            }
+
+            count = lastNo; // Cập nhật số thứ tự cuối
+        }
+    }
+
+    atexit(OperationHistory_at_exit);
+    initialized = 1;
+}
+
+
+void OperationHistory_log(const char *action,
+                          const char *target,
+                          const char *desc,
+                          const char *status) {
+    ensure_initialized();
+    if (!bw) {
+        fprintf(stderr, "Error writing log: stream not open\n");
+        return;
+    }
+
+    count++;
+    char timebuf[32];
+    current_time_str(timebuf, sizeof timebuf);
+
+    // Ghi đúng format CSV như Java
+    fprintf(bw, "%d,%s,%s,%s,%s,%s\n",
+            count, timebuf, action, target, desc, status);
+    fflush(bw); // luôn flush để hạn chế mất dữ liệu
+}
+
+void OperationHistory_close(void) {
+    OperationHistory_at_exit();
+    initialized = 0;
+}
+void OperationHistory_clear(void) {
+    FILE *f = fopen(FILE_NAME, "w");  // mở ở chế độ ghi mới (xóa hết nội dung cũ)
+    if (!f) {
+        fprintf(stderr, "Error clearing log file: cannot open %s\n", FILE_NAME);
+        return;
+    }
+
+    // Ghi lại header duy nhất
+    fputs("No.,Time,Action,Target,Description,Status\n", f);
+    fclose(f);
+
+    // reset biến đếm để lần ghi tiếp theo bắt đầu lại từ 1
+    count = 0;
+    printf("Cleared all operation logs (header kept)\n");
 }
