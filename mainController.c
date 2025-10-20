@@ -489,7 +489,6 @@ void compute_max_widths(const ArrayList *s, int *nameW, int *emailW) {
 }
 
 void sanitize_csv_field_remove_commas(const char *in, char *out, size_t outsz) {
-    /* remove commas like Java did */
     size_t j = 0;
     for (size_t i = 0; in[i] && j + 1 < outsz; ++i) {
         if (in[i] != ',') out[j++] = in[i];
@@ -525,7 +524,6 @@ char *ID(Student *students, size_t n_students) {
 
         if (hasSpecialChar(buf, "0123456789")) {
             check = 1;
-            printf("ID cannot contain special characters!\n\n");
         }
         if ((int)strlen(buf) > 10) {
             printf("ID is too long! Please enter a shorter one.\n");
@@ -534,7 +532,7 @@ char *ID(Student *students, size_t n_students) {
         if (!check && id_exists(students, n_students, buf)) {
             printf("ID %s already exists in the system!\n", buf);
             check = 1;
-        }
+        }void trim_inplace(char *s);
     } while (check);
 
     char *ans = dupstr(buf);
@@ -769,7 +767,7 @@ char *email(void) {
     return dupstr(buf);
 }
 
-char *gender(void) {
+	char *gender(void){
     char buf[MAX_LINE];
     int check;
     do {
@@ -809,8 +807,6 @@ Student addStudent(ArrayList *students) {
     strncpy(s.ID, tmp, sizeof(s.ID)-1);
     s.ID[sizeof(s.ID)-1] = '\0';
     free(tmp);
-
-    // >> VIẾT description BẰNG s.ID ĐÃ COPY (không dùng tmp đã free)
     snprintf(description, sizeof(description), "Add student with ID=%s", s.ID);
 
     // Name
@@ -948,7 +944,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
         printf("No matching students found!\n");
         OperationHistory_log("Display student", "Student", "Display all student", "OK");
     }
-    else OperationHistory_log("Display student", "Student", "Display all student", "ERROR");
+    else OperationHistory_log("Display student", "Student", "No matching student found!", "ERROR");
 
     /* bottom bar */
     print_repeat('=', totalWidth);
@@ -1068,6 +1064,9 @@ void delete(ArrayList *s) {
 
     char choice[32]; read_line(choice, sizeof(choice));
     char *data = NULL;
+    char des[100];
+    int count = 0;
+        
 
     if (strcmp(choice, "0") == 0) {
         printf("Exitting to Menu...\n");
@@ -1087,111 +1086,179 @@ void delete(ArrayList *s) {
             if ((int)strlen(idbuf) > 10) { printf("ID is too long! Please enter a shorter one.\n"); ok = 0; }
         } while (!ok);
 
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].ID, idbuf)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that ID!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with ID %s", count, idbuf);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with ID %s", idbuf);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}  
+		free(data);        
         return;
     }
 
     else if (strcmp(choice, "2") == 0) {
         data = Name();
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].Name, data)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that Name!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with name %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with name %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
         free(data); return;
     }
 
     else if (strcmp(choice, "3") == 0) {
         data = Class();
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].Class, data)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that Class!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with class %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with name %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
         free(data); return;
     }
 
     else if (strcmp(choice, "4") == 0) {
         char option[8];
-        do {
             printf("\n=== DELETE BY SCORE ===\n");
             printf("1. Score >\n2. Score <\n3. Score <=\n4. Score >=\n5. Score =\n0. Return\n");
             printf("Enter your choice: ");
             read_line(option, sizeof(option));
-            if (strcmp(option, "0") == 0) { printf("Returning to main menu...\n"); break; }
+            if (strcmp(option, "0") == 0) { printf("Returning to main menu...\n"); return; }
             if (!(strlen(option)==1 && option[0]>='1' && option[0]<='5')) {
                 printf("Invalid choice! Please enter from 1–5.\n");
-                continue;
+                return;
             }
             double sc = Score();
-            int count = 0;
+            int cnt = 0;
             for (int i = s->size - 1; i >= 0; --i) {
                 double v = s->data[i].Score;
-                if      (strcmp(option,"1")==0 && v >  sc) { removeAt(s, i); count++; }
-                else if (strcmp(option,"2")==0 && v <  sc) { removeAt(s, i); count++; }
-                else if (strcmp(option,"3")==0 && v <= sc) { removeAt(s, i); count++; }
-                else if (strcmp(option,"4")==0 && v >= sc) { removeAt(s, i); count++; }
-                else if (strcmp(option,"5")==0 && v == sc) { removeAt(s, i); count++; }
+                if      (strcmp(option,"1")==0 && v >  sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"2")==0 && v <  sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"3")==0 && v <= sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"4")==0 && v >= sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"5")==0 && v == sc) { removeAt(s, i); cnt++; }
             }
-            if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-            else           printf("No student found with that score!\n");
-        } while (1);
+            if (cnt > 0) {
+        	printf("Deleted %d student(s) successfully!\n", cnt);
+        	if      (strcmp(option,"1")==0) {
+				sprintf(des, "Delete %d student(s) with score > %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"2")==0) {
+				sprintf(des, "Delete %d student(s) with score < %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"3")==0) {
+				sprintf(des, "Delete %d student(s) with score <= %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"4")==0) {
+				sprintf(des, "Delete %d student(s) with score >= %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"5")==0) {
+				sprintf(des, "Delete %d student(s) with score = %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with score %.2lf", sc);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}  
         return;
     }
 
     else if (strcmp(choice, "5") == 0) {
         data = DOB();
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].DOB, data)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that Date of Birth!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with Date of Birth %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with Date of Birth %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
         free(data); return;
     }
 
     else if (strcmp(choice, "6") == 0) {
         data = gender();
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].gender, data)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that Gender!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with gender %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with gender %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}    
         free(data); return;
     }
 
     else if (strcmp(choice, "7") == 0) {
         data = email(); 
-        int count = 0;
         for (int i = s->size - 1; i >= 0; --i) {
             if (str_ieq(s->data[i].email, data)) { removeAt(s, i); count++; }
         }
-        if (count > 0) printf("Deleted %d student(s) successfully!\n", count);
-        else           printf("No student found with that Email!\n");
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with email %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with email %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}    
         free(data); return;
     }
 
     else if (strcmp(choice, "8") == 0) {
         clearList(s);
         printf("All student data deleted successfully!\n");
+        OperationHistory_log("Delete student", "Student", "Delete all student.", "OK");
         return;
     }
-
     printf("Invalid choice!\n");
+    OperationHistory_log("Delete student", "Student", "Invalid choice", "OK");
 }
 
 void update(ArrayList *s) {
     int idx = 0;
     char IDbuf[128];
-
+	char des[100];
     int ok;
     do {
         ok = 1;
@@ -1209,6 +1276,8 @@ void update(ArrayList *s) {
     }
     if (idx == s->size) {
         printf("ID %s NOT FOUND! \n Update failed.\n", IDbuf);
+        sprintf(des, "ID %s NOT FOUND!", IDbuf);
+        OperationHistory_log("Delete student", "Student", des, "OK");
         return;
     }
 
@@ -1229,32 +1298,55 @@ void update(ArrayList *s) {
 
     if (strcmp(choice, "1") == 0) {
         char *v = ID(s->data, (size_t)s->size);
+        sprintf(des, "Student with ID %s: The old ID (%s) replaced to new ID ", IDbuf, s->data[idx].ID );
         strncpy(s->data[idx].ID, v, sizeof(s->data[idx].ID)-1); s->data[idx].ID[sizeof(s->data[idx].ID)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else if (strcmp(choice, "2") == 0) {
         char *v = Name();
+        sprintf(des, "Student with ID %s: The old name (%s) replaced to new name ", IDbuf, s->data[idx].Name );
         strncpy(s->data[idx].Name, v, sizeof(s->data[idx].Name)-1); s->data[idx].Name[sizeof(s->data[idx].Name)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else if (strcmp(choice, "3") == 0) {
         char *v = Class();
+        sprintf(des, "Student with ID %s: The old class (%s) replaced to new class ", IDbuf, s->data[idx].Class );
         strncpy(s->data[idx].Class, v, sizeof(s->data[idx].Class)-1); s->data[idx].Class[sizeof(s->data[idx].Class)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else if (strcmp(choice, "4") == 0) {
+    	sprintf(des, "Student with ID %s: The old score (%s) replaced to new score ", IDbuf, s->data[idx].Score );
         s->data[idx].Score = Score();
+        sprintf(des, "(%s).", s->data[idx].Score);
+        OperationHistory_log("Update student", "Student", des, "OK");
+        
     } else if (strcmp(choice, "5") == 0) {
         char *v = DOB();
+        sprintf(des, "Student with ID %s: The old Date of Birth (%s) replaced to new Date of Birth ", IDbuf, s->data[idx].DOB );
         strncpy(s->data[idx].DOB, v, sizeof(s->data[idx].DOB)-1); s->data[idx].DOB[sizeof(s->data[idx].DOB)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else if (strcmp(choice, "6") == 0) {
         char *v = gender();
+        sprintf(des, "Student with ID %s: The old gender (%s) replaced to new gender ", IDbuf, s->data[idx].gender );
         strncpy(s->data[idx].gender, v, sizeof(s->data[idx].gender)-1); s->data[idx].gender[sizeof(s->data[idx].gender)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else if (strcmp(choice, "7") == 0) {
         char *v = email();
+        sprintf(des, "Student with ID %s: The old email (%s) replaced to new email ", IDbuf, s->data[idx].email );
         strncpy(s->data[idx].email, v, sizeof(s->data[idx].email)-1); s->data[idx].email[sizeof(s->data[idx].email)-1]=0;
+        sprintf(des, "(%s).", v);
+        OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
     } else {
         printf("Invalid choice!\n");
+        OperationHistory_log("Update student", "Student", "Invalid choice", "ERROR");
         return;
     }
 
@@ -1703,15 +1795,13 @@ static void current_time_str(char *buf, size_t n) {
     struct tm tm_info;
 
 #if defined(_WIN32)
-    /* Windows: ưu tiên localtime_s; nếu toolchain không có, fallback về localtime */
     #ifdef _MSC_VER
         localtime_s(&tm_info, &t);
     #else
-        struct tm *p = localtime(&t);   /* MinGW/Dev-C++ thường không có localtime_s/ localtime_r ổn định */
+        struct tm *p = localtime(&t);  
         if (p) tm_info = *p;
     #endif
 #else
-    /* POSIX (Linux/macOS): dùng localtime_r */
     localtime_r(&t, &tm_info);
 #endif
 
@@ -1726,44 +1816,46 @@ static void ensure_initialized(void) {
 void OperationHistory_init(void) {
     if (initialized) return;
 
-    fw = fopen(FILE_NAME, "a+");     // tạo nếu chưa có, mở append
+    fw = fopen(FILE_NAME, "a+"); 
     if (!fw) {
         fprintf(stderr, "Error initializing file writer\n");
         return;
     }
     bw = fw;
 
-    // Nếu file rỗng => ghi header
     if (fseek(bw, 0, SEEK_END) == 0) {
         long size = ftell(bw);
         if (size == 0) {
             fputs("No.,Time,Action,Target,Description,Status\n", bw);
             fflush(bw);
+            count = 0;
         } else {
-            // File KHÔNG rỗng => đọc số thứ tự cuối
-            fseek(bw, 0, SEEK_SET);
+            if (fseek(bw, 0, SEEK_SET) != 0) {
+                count = 0;
+            } else {
+                char line[512];
+                int lastNo = 0;
 
-            char line[512];
-            int lastNo = 0;
-
-            // Bỏ qua dòng header
-            fgets(line, sizeof(line), bw);
-
-            // Đọc từng dòng đến cuối file
-            while (fgets(line, sizeof(line), bw)) {
-                int no;
-                if (sscanf(line, "%d,", &no) == 1) {
-                    lastNo = no;
+                if (fgets(line, sizeof(line), bw) != NULL) {
+                    while (fgets(line, sizeof(line), bw)) {
+                        int no;
+                        if (sscanf(line, "%d,", &no) == 1) {
+                            lastNo = no;
+                        }
+                    }
                 }
+                count = lastNo; 
             }
-
-            count = lastNo; // Cập nhật số thứ tự cuối
+            fseek(bw, 0, SEEK_END);
         }
+    } else {
+        count = 0;
     }
 
-    atexit(OperationHistory_at_exit);
+    atexit(OperationHistory_at_exit); 
     initialized = 1;
 }
+
 
 
 void OperationHistory_log(const char *action,
@@ -1780,28 +1872,26 @@ void OperationHistory_log(const char *action,
     char timebuf[32];
     current_time_str(timebuf, sizeof timebuf);
 
-    // Ghi đúng format CSV như Java
     fprintf(bw, "%d,%s,%s,%s,%s,%s\n",
             count, timebuf, action, target, desc, status);
-    fflush(bw); // luôn flush để hạn chế mất dữ liệu
+    fflush(bw); 
 }
 
 void OperationHistory_close(void) {
     OperationHistory_at_exit();
     initialized = 0;
 }
+
 void OperationHistory_clear(void) {
-    FILE *f = fopen(FILE_NAME, "w");  // mở ở chế độ ghi mới (xóa hết nội dung cũ)
+    FILE *f = fopen(FILE_NAME, "w");
     if (!f) {
         fprintf(stderr, "Error clearing log file: cannot open %s\n", FILE_NAME);
         return;
     }
 
-    // Ghi lại header duy nhất
     fputs("No.,Time,Action,Target,Description,Status\n", f);
     fclose(f);
 
-    // reset biến đếm để lần ghi tiếp theo bắt đầu lại từ 1
     count = 0;
     printf("Cleared all operation logs (header kept)\n");
 }
