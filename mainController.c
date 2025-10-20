@@ -948,7 +948,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
         printf("No matching students found!\n");
         OperationHistory_log("Display student", "Student", "Display all student", "OK");
     }
-    else OperationHistory_log("Display student", "Student", "Display all student", "OK");
+    else OperationHistory_log("Display student", "Student", "Display all student", "ERROR");
 
     /* bottom bar */
     print_repeat('=', totalWidth);
@@ -967,52 +967,90 @@ void search(ArrayList *s) {
     printf("Enter your choice: ");
 
     char choice[32]; read_line(choice, sizeof(choice));
-
+    char data[100];
+    strcpy(data, "Search score with ");
+	
     if (strcmp(choice, "1") == 0) {
         char *id = ID(s->data, (size_t)s->size);
+        sprintf(data, "ID");
         displayStudents("ID", id, "=", s);
         free(id);
     } else if (strcmp(choice, "2") == 0) {
         char *nm = Name();
         displayStudents("Name", nm, "=", s);
+        sprintf(data, "Name");
         free(nm);
     } else if (strcmp(choice, "3") == 0) {
         char *cl = Class();
         displayStudents("Class", cl, "=", s);
+        sprintf(data, "Class");
         free(cl);
     } else if (strcmp(choice, "4") == 0) {
         char option[32];
+        sprintf(data, "Score ");
         printf("\n=== SEARCH BY SCORE ===\n");
         printf("1. Score >\n2. Score <\n3. Score <=\n4. Score >=\n5. Score =\n0. Return\n");
         printf("Enter your choice: ");
         read_line(option, sizeof(option));
-        if (strcmp(option, "0") == 0) { printf("Returning to main menu...\n"); return; }
+        if (strcmp(option, "0") == 0) { 
+			printf("Returning to main menu...\n");
+			OperationHistory_log("Search student", "Student", "Return to menu", "OK");
+			return;
+		}
         printf("Enter Score: ");
         double sc = Score();
         char buf[32]; snprintf(buf, sizeof(buf), "%.4f", sc);
-        if      (strcmp(option, "1")==0) displayStudents("Score", buf, ">",  s);
-        else if (strcmp(option, "2")==0) displayStudents("Score", buf, "<",  s);
-        else if (strcmp(option, "3")==0) displayStudents("Score", buf, "<=", s);
-        else if (strcmp(option, "4")==0) displayStudents("Score", buf, ">=", s);
-        else if (strcmp(option, "5")==0) displayStudents("Score", buf, "=",  s);
-        else   printf("Invalid choice!\n");
+        if      (strcmp(option, "1")==0) {
+        	displayStudents("Score", buf, ">",  s);
+        	sprintf(data, ">.");
+		}
+        else if (strcmp(option, "2")==0) {
+        	displayStudents("Score", buf, "<",  s);
+        	sprintf(data, "<.");
+		}
+        else if (strcmp(option, "3")==0) {
+        	displayStudents("Score", buf, "<=", s);
+        	sprintf(data, "<=.");
+		}
+        else if (strcmp(option, "4")==0) {
+        	displayStudents("Score", buf, ">=", s);
+        	sprintf(data, ">=.");
+		}
+        else if (strcmp(option, "5")==0) {
+        	displayStudents("Score", buf, "=",  s);
+        	sprintf(data, "=.");
+		}
+        else   {
+        	printf("Invalid choice!\n");
+        	OperationHistory_log("Search student", "Student", "Invalid choice", "ERROR");
+        	return;
+		}
+		
     } else if (strcmp(choice, "5") == 0) {
         char *d = DOB();
         displayStudents("DOB", d, "=", s);
+        strcpy(data, "Date of Birth");
         free(d);
     } else if (strcmp(choice, "6") == 0) {
         char *g = gender();
+        strcpy(data, "Gender");
         displayStudents("Gender", g, "=", s);
         free(g);
     } else if (strcmp(choice, "7") == 0) {
         char *em = email();
+        strcpy(data, "Email");
         displayStudents("Email", em, "=", s);
         free(em);
     } else if (strcmp(choice, "0") == 0) {
+    	strcpy(data, "Return to menu!");
         printf("Returning to main menu...\n");
+        return;
     } else {
         printf("Invalid choice! Please enter 0–7.\n");
+        OperationHistory_log("Search student", "Student", "Invalid choice", "ERROR");
+        return;
     }
+    OperationHistory_log("Search student", "Student", data, "ERROR");
 }
 
 void delete(ArrayList *s) {
