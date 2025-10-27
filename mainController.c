@@ -767,7 +767,7 @@ char *email(void) {
     return dupstr(buf);
 }
 
-	char *gender(void){
+char *gender(void){
     char buf[MAX_LINE];
     int check;
     do {
@@ -1605,7 +1605,7 @@ void loadTextFile(ArrayList *s) {
 
     fclose(fp);
     printf("✅ Loaded successfully! Total students: %d\n", s->size);
-}
+}	
 
 
 
