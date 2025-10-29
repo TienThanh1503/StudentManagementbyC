@@ -4,3 +4,17 @@ No.,Time,Action,Target,Description,Status
 3,29/10/2025 17:07:26,Delete student,Student,Delete by Email: "thanh" -> No student found,ERROR
 4,29/10/2025 17:07:33,Display student,Student,Displayed matching students successfully,OK
 5,29/10/2025 17:07:37,Delete student,Student,Delete by Gender: "male" -> deleted ID SE207644  Name Do Minh Khoa,OK
+1,29/10/2025 17:12:09,Add student,Student,Add student with ID=1,OK
+2,29/10/2025 17:12:11,Display student,Student,Displayed matching students successfully,OK
+3,29/10/2025 17:12:33,Display student,Student,Displayed matching students successfully,OK
+4,29/10/2025 17:12:38,Update student,Student,Update Name: old=T -> new=Thanh,OK
+5,29/10/2025 17:12:39,Display student,Student,Displayed matching students successfully,OK
+1,29/10/2025 17:18:25,Display student,Student,Displayed matching students successfully,OK
+2,29/10/2025 17:18:32,Display student,Student,Displayed matching students successfully,OK
+3,29/10/2025 17:18:32,Sort student,Student,Sorted by Name in descending order,OK
+1,29/10/2025 17:28:02,Load file,studentsData.txt,Loaded 1000 students from text file,OK
+2,29/10/2025 17:28:07,Display student,Student,Displayed matching students successfully,OK
+1,29/10/2025 17:32:53,Load file,None,Invalid load choice,ERROR
+2,29/10/2025 17:33:25,Load file,studentsData.txt,Loaded 1000 students from text file,OK
+3,29/10/2025 17:33:35,Display student,Student,Displayed matching students successfully,OK
+4,29/10/2025 17:33:35,Setting,Top 10,Displayed Top 10 students by score,OK

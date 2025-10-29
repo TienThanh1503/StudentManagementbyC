@@ -1455,21 +1455,21 @@ void delete(ArrayList *s) {
 void update(ArrayList *s) {
     int idx = 0;
     char IDbuf[128];
-	char des[100];
+    char des[256];
     strcpy(IDbuf, ID(s->data, (size_t)s->size, 0));
 
     while (idx < s->size) {
         if (str_ieq(s->data[idx].ID, IDbuf)) break;
         idx++;
     }
+
     if (idx == s->size) {
-        printf("ID %s NOT FOUND! \n Update failed.\n", IDbuf);
-        sprintf(des, "ID %s NOT FOUND!", IDbuf);
-        OperationHistory_log("Delete student", "Student", des, "OK");
+        printf("ID %s NOT FOUND!\nUpdate failed.\n", IDbuf);
+        sprintf(des, "Update failed: ID %s not found", IDbuf);
+        OperationHistory_log("Update student", "Student", des, "ERROR");
         return;
     }
 
-    /* Display current information */
     displayStudents("ID", IDbuf, "=", s);
 
     printf("\n=== UPDATE MENU ===\n");
@@ -1480,66 +1480,81 @@ void update(ArrayList *s) {
     printf("5. Date of Birth\n");
     printf("6. Gender\n");
     printf("7. Email\n");
+    printf("0. Return to menu\n");
     printf("Enter your choice: ");
 
-    char choice[32]; read_line(choice, sizeof(choice));
+    char choice[32];
+    read_line(choice, sizeof(choice));
+
+    if (strcmp(choice, "0") == 0) {
+        printf("Returning to main menu...\n");
+        OperationHistory_log("Update student", "Student", "User canceled update", "OK");
+        return;
+    }
 
     if (strcmp(choice, "1") == 0) {
         char *v = ID(s->data, (size_t)s->size, 1);
-        sprintf(des, "Student with ID %s: The old ID (%s) replaced to new ID ", IDbuf, s->data[idx].ID );
-        strncpy(s->data[idx].ID, v, sizeof(s->data[idx].ID)-1); s->data[idx].ID[sizeof(s->data[idx].ID)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update ID: old=%s -> new=%s", s->data[idx].ID, v);
+        strncpy(s->data[idx].ID, v, sizeof(s->data[idx].ID) - 1);
+        s->data[idx].ID[sizeof(s->data[idx].ID) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else if (strcmp(choice, "2") == 0) {
         char *v = Name();
-        sprintf(des, "Student with ID %s: The old name (%s) replaced to new name ", IDbuf, s->data[idx].Name );
-        strncpy(s->data[idx].Name, v, sizeof(s->data[idx].Name)-1); s->data[idx].Name[sizeof(s->data[idx].Name)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update Name: old=%s -> new=%s", s->data[idx].Name, v);
+        strncpy(s->data[idx].Name, v, sizeof(s->data[idx].Name) - 1);
+        s->data[idx].Name[sizeof(s->data[idx].Name) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else if (strcmp(choice, "3") == 0) {
         char *v = Class();
-        sprintf(des, "Student with ID %s: The old class (%s) replaced to new class ", IDbuf, s->data[idx].Class );
-        strncpy(s->data[idx].Class, v, sizeof(s->data[idx].Class)-1); s->data[idx].Class[sizeof(s->data[idx].Class)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update Class: old=%s -> new=%s", s->data[idx].Class, v);
+        strncpy(s->data[idx].Class, v, sizeof(s->data[idx].Class) - 1);
+        s->data[idx].Class[sizeof(s->data[idx].Class) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else if (strcmp(choice, "4") == 0) {
-    	sprintf(des, "Student with ID %s: The old score (%s) replaced to new score ", IDbuf, s->data[idx].Score );
+        double old = s->data[idx].Score;
         s->data[idx].Score = Score();
-        sprintf(des, "(%s).", s->data[idx].Score);
+        sprintf(des, "Update Score: old=%.2lf -> new=%.2lf", old, s->data[idx].Score);
         OperationHistory_log("Update student", "Student", des, "OK");
-        
+
     } else if (strcmp(choice, "5") == 0) {
         char *v = DOB();
-        sprintf(des, "Student with ID %s: The old Date of Birth (%s) replaced to new Date of Birth ", IDbuf, s->data[idx].DOB );
-        strncpy(s->data[idx].DOB, v, sizeof(s->data[idx].DOB)-1); s->data[idx].DOB[sizeof(s->data[idx].DOB)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update DOB: old=%s -> new=%s", s->data[idx].DOB, v);
+        strncpy(s->data[idx].DOB, v, sizeof(s->data[idx].DOB) - 1);
+        s->data[idx].DOB[sizeof(s->data[idx].DOB) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else if (strcmp(choice, "6") == 0) {
         char *v = gender();
-        sprintf(des, "Student with ID %s: The old gender (%s) replaced to new gender ", IDbuf, s->data[idx].gender );
-        strncpy(s->data[idx].gender, v, sizeof(s->data[idx].gender)-1); s->data[idx].gender[sizeof(s->data[idx].gender)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update Gender: old=%s -> new=%s", s->data[idx].gender, v);
+        strncpy(s->data[idx].gender, v, sizeof(s->data[idx].gender) - 1);
+        s->data[idx].gender[sizeof(s->data[idx].gender) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else if (strcmp(choice, "7") == 0) {
         char *v = email(s->data, (size_t)s->size, 0);
-        sprintf(des, "Student with ID %s: The old email (%s) replaced to new email ", IDbuf, s->data[idx].email );
-        strncpy(s->data[idx].email, v, sizeof(s->data[idx].email)-1); s->data[idx].email[sizeof(s->data[idx].email)-1]=0;
-        sprintf(des, "(%s).", v);
+        sprintf(des, "Update Email: old=%s -> new=%s", s->data[idx].email, v);
+        strncpy(s->data[idx].email, v, sizeof(s->data[idx].email) - 1);
+        s->data[idx].email[sizeof(s->data[idx].email) - 1] = '\0';
         OperationHistory_log("Update student", "Student", des, "OK");
         free(v);
+
     } else {
         printf("Invalid choice!\n");
-        OperationHistory_log("Update student", "Student", "Invalid choice", "ERROR");
+        OperationHistory_log("Update student", "Student", "Invalid update choice", "ERROR");
         return;
     }
 
     printf("Update successfully!\n");
 }
+
 
 void sort(ArrayList *s) {
     printf("\n=== SORT STUDENTS ===\n");
@@ -1558,51 +1573,69 @@ void sort(ArrayList *s) {
     char option[32]; read_line(option, sizeof(option));
 
     ArrayList s_copy = copyList(s);
+    char des[100];
+    const char *order = (strcmp(option, "1") == 0) ? "ascending" : "descending";
 
     if (strcmp(choice, "1") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_id_asc : cmp_id_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "2") == 0) {
+        sprintf(des, "Sorted by ID in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "2") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_name_asc : cmp_name_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "3") == 0) {
+        sprintf(des, "Sorted by Name in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "3") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_class_asc : cmp_class_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "4") == 0) {
+        sprintf(des, "Sorted by Class in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "4") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_score_asc : cmp_score_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "5") == 0) {
+        sprintf(des, "Sorted by Score in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "5") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_dob_asc : cmp_dob_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "6") == 0) {
+        sprintf(des, "Sorted by Date of Birth in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "6") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_gender_asc : cmp_gender_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else if (strcmp(choice, "7") == 0) {
+        sprintf(des, "Sorted by Gender in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else if (strcmp(choice, "7") == 0) {
         qsort(s_copy.data, (size_t)s_copy.size, sizeof(Student),
               (strcmp(option,"1")==0) ? cmp_email_asc : cmp_email_desc);
         displayStudents("all", "", "", &s_copy);
-    }
-    else {
+        sprintf(des, "Sorted by Email in %s order", order);
+        OperationHistory_log("Sort student", "Student", des, "OK");
+
+    } else {
         printf("Invalid choice!\n");
+        OperationHistory_log("Sort student", "Student", "Invalid sort choice", "ERROR");
     }
 
     free(s_copy.data);
 }
 
+
 //==================FileService Functions================================
-void saveFile(ArrayList *s){
+void saveFile(ArrayList *s) {
     char choice[16];
     printf("1. Save data in file .txt\n");
     printf("2. Save data in file .csv\n");
@@ -1610,20 +1643,23 @@ void saveFile(ArrayList *s){
     printf("Enter your choice: ");
     read_line(choice, sizeof(choice));
 
-    if (strcmp(choice, "0") == 0){
+    if (strcmp(choice, "0") == 0) {
         printf("Exitting...\n");
+        OperationHistory_log("Save file", "None", "User canceled save operation", "OK");
         return;
     }
+
     if (strcmp(choice, "1") == 0) {
         saveTextFile(s);
     } else if (strcmp(choice, "2") == 0) {
         saveCSVFile(s);
     } else {
         printf("Invalid choice!\n");
+        OperationHistory_log("Save file", "None", "Invalid save choice", "ERROR");
     }
 }
 
-void loadFile(ArrayList *s){
+void loadFile(ArrayList *s) {
     char choice[16];
     printf("1. Load data in file .txt\n");
     printf("2. Load data in file .csv\n");
@@ -1631,16 +1667,19 @@ void loadFile(ArrayList *s){
     printf("Enter your choice: ");
     read_line(choice, sizeof(choice));
 
-    if (strcmp(choice, "0") == 0){
+    if (strcmp(choice, "0") == 0) {
         printf("Exitting...\n");
+        OperationHistory_log("Load file", "None", "User canceled load operation", "OK");
         return;
     }
+
     if (strcmp(choice, "1") == 0) {
         loadTextFile(s);
     } else if (strcmp(choice, "2") == 0) {
         loadCSVFile(s);
     } else {
         printf("Invalid choice!\n");
+        OperationHistory_log("Load file", "None", "Invalid load choice", "ERROR");
     }
 }
 
@@ -1653,6 +1692,7 @@ void saveTextFile(ArrayList *s) {
 
     if (fileName[0] == '\0') {
         printf("File name cannot be empty!\n");
+        OperationHistory_log("Save file", "Unknown", "TXT file name empty", "ERROR");
         return;
     }
 
@@ -1660,7 +1700,6 @@ void saveTextFile(ArrayList *s) {
     if (file_exists(fileName)) {
         printf("File '%s' already exists.\n", fileName);
         if (ask_yes_no("Do you want to overwrite it? (y/n): ")) {
-            /* overwrite: truncate file */
             FILE *fp = fopen(fileName, "w");
             if (fp) fclose(fp);
             printf("Old data cleared.\n");
@@ -1670,15 +1709,17 @@ void saveTextFile(ArrayList *s) {
         }
     }
 
-    /* compute widths */
     int nameW=8, emailW=12;
     compute_max_widths(s, &nameW, &emailW);
     int totalWidth = 80 + nameW + emailW;
 
     FILE *fp = fopen(fileName, append ? "a" : "w");
-    if (!fp) { perror("fopen"); return; }
+    if (!fp) {
+        perror("fopen");
+        OperationHistory_log("Save file", fileName, "Failed to open TXT file", "ERROR");
+        return;
+    }
 
-    /* header */
     fprint_repeat(fp, '=', totalWidth);
 
     char *cNo     = center("No.", 5);
@@ -1694,16 +1735,16 @@ void saveTextFile(ArrayList *s) {
             cNo, cID, cName, cGender, cClass, cDOB, cEmail, cScore);
     fprint_repeat(fp, '-', totalWidth);
 
-    free(cNo); free(cID); free(cName); free(cGender); free(cClass); free(cDOB); free(cEmail); free(cScore);
+    free(cNo); free(cID); free(cName); free(cGender);
+    free(cClass); free(cDOB); free(cEmail); free(cScore);
 
     for (int i = 0; i < s->size; ++i) {
         Student *st = &s->data[i];
-
         char numbuf[32]; snprintf(numbuf, sizeof(numbuf), "%d", i+1);
-        char scbuf[32];  snprintf(scbuf, sizeof(scbuf),  "%.2f", st->Score);
+        char scbuf[32];  snprintf(scbuf, sizeof(scbuf), "%.2f", st->Score);
 
-        char *cNo2     = center(numbuf, 5);
-        char *cID2     = center(st->ID, 10);
+        char *cNo2 = center(numbuf, 5);
+        char *cID2 = center(st->ID, 10);
         char *cGender2 = center(st->gender, 8);
         char *cClass2  = center(st->Class, 10);
         char *cDOB2    = center(st->DOB, 14);
@@ -1718,12 +1759,17 @@ void saveTextFile(ArrayList *s) {
                 emailW, st->email,
                 cScore2);
 
-        free(cNo2); free(cID2); free(cGender2); free(cClass2); free(cDOB2); free(cScore2);
+        free(cNo2); free(cID2); free(cGender2);
+        free(cClass2); free(cDOB2); free(cScore2);
     }
 
     fprint_repeat(fp, '=', totalWidth);
     fclose(fp);
     printf("Data saved successfully to %s\n", fileName);
+
+    char des[256];
+    sprintf(des, "Saved %d students to TXT file", s->size);
+    OperationHistory_log("Save file", fileName, des, "OK");
 }
 
 static void trim(char *s){
@@ -1740,27 +1786,35 @@ void loadTextFile(ArrayList *s) {
     read_line(fileName, sizeof(fileName));
     trim_inplace(fileName);
 
-    if (!file_exists(fileName)) { printf("File not found!\n"); return; }
+    if (!file_exists(fileName)) {
+        printf("File not found!\n");
+        OperationHistory_log("Load file", fileName, "Text file not found", "ERROR");
+        return;
+    }
 
     FILE *fp = fopen(fileName, "r");
-    if (!fp) { perror("fopen"); return; }
+    if (!fp) {
+        perror("fopen");
+        OperationHistory_log("Load file", fileName, "Failed to open text file", "ERROR");
+        return;
+    }
 
     char line[MAX_LINE];
+    int beforeCount = s->size;
 
-    /* Skip 3–4 dòng header: (=====), (tiêu đề), (-----), (có thể có dòng trống) */
+    // Skip headers
     for (int i = 0; i < 4; ++i) {
         long pos = ftell(fp);
         if (!fgets(line, sizeof(line), fp)) break;
-        if (line[0] != '=' && line[0] != '-' && line[0] != '\n' && line[0] != '\r')
-        { fseek(fp, pos, SEEK_SET); break; }  // không phải header thì quay lại
+        if (line[0] != '=' && line[0] != '-' && line[0] != '\n' && line[0] != '\r') {
+            fseek(fp, pos, SEEK_SET);
+            break;
+        }
     }
 
     while (fgets(line, sizeof(line), fp)) {
-        // bỏ qua các dòng phân cách
         if (line[0] == '=' || line[0] == '-' || line[0] == '\n' || line[0] == '\r') continue;
 
-        // cấu trúc dòng:
-        // | No | ID | Name | Gender | Class | DOB | Email | Score |
         int no;
         Student stu; memset(&stu, 0, sizeof(stu));
         char id[32], name[128], gender[16], cls[32], dob[32], email[128];
@@ -1770,30 +1824,33 @@ void loadTextFile(ArrayList *s) {
             " | %d | %31[^|] | %127[^|] | %15[^|] | %31[^|] | %31[^|] | %127[^|] | %lf |",
             &no, id, name, gender, cls, dob, email, &score);
 
-        if (n != 8) {
-            /* debug (nếu cần):
-            fprintf(stderr, "[WARN] parse fail (got %d): %s", n, line);
-            */
-            continue;
-        }
+        if (n != 8) continue;
 
-        // trim từng trường
         trim(id); trim(name); trim(gender); trim(cls); trim(dob); trim(email);
 
-        strncpy(stu.ID,     id,    sizeof(stu.ID)-1);
-        strncpy(stu.Name,   name,  sizeof(stu.Name)-1);
-        strncpy(stu.gender, gender,sizeof(stu.gender)-1);
-        strncpy(stu.Class,  cls,   sizeof(stu.Class)-1);
-        strncpy(stu.DOB,    dob,   sizeof(stu.DOB)-1);
-        strncpy(stu.email,  email, sizeof(stu.email)-1);
+        strncpy(stu.ID, id, sizeof(stu.ID) - 1);
+        strncpy(stu.Name, name, sizeof(stu.Name) - 1);
+        strncpy(stu.gender, gender, sizeof(stu.gender) - 1);
+        strncpy(stu.Class, cls, sizeof(stu.Class) - 1);
+        strncpy(stu.DOB, dob, sizeof(stu.DOB) - 1);
+        strncpy(stu.email, email, sizeof(stu.email) - 1);
         stu.Score = score;
 
         addStudentToList(s, stu);
     }
 
     fclose(fp);
-    printf("Loaded successfully! Total students: %d\n", s->size);
-}	
+    int loaded = s->size - beforeCount;
+    printf("Loaded successfully! Total students: %d (added %d)\n", s->size, loaded);
+
+    char des[256];
+    if (loaded > 0)
+        sprintf(des, "Loaded %d students from text file", loaded);
+    else
+        sprintf(des, "Loaded 0 students from text file (no valid data)");
+
+    OperationHistory_log("Load file", fileName, des, "OK");
+}
 
 
 
@@ -1807,8 +1864,10 @@ void saveCSVFile(ArrayList *s) {
 
     if (fileName[0] == '\0') {
         printf("File name cannot be empty!\n");
+        OperationHistory_log("Save file", "Unknown", "CSV file name empty", "ERROR");
         return;
     }
+
     if (strlen(fileName) < 4 || strcmp(fileName + strlen(fileName) - 4, ".csv") != 0) {
         strncat(fileName, ".csv", sizeof(fileName) - strlen(fileName) - 1);
     }
@@ -1817,7 +1876,8 @@ void saveCSVFile(ArrayList *s) {
     if (file_exists(fileName)) {
         printf("File '%s' already exists.\n", fileName);
         if (ask_yes_no("Do you want to overwrite it? (y/n): ")) {
-            FILE *fp = fopen(fileName, "w"); if (fp) fclose(fp);
+            FILE *fp = fopen(fileName, "w");
+            if (fp) fclose(fp);
             printf(" Old data cleared.\n");
         } else {
             append = 1;
@@ -1828,7 +1888,11 @@ void saveCSVFile(ArrayList *s) {
     }
 
     FILE *fp = fopen(fileName, append ? "a" : "w");
-    if (!fp) { perror("fopen"); return; }
+    if (!fp) {
+        perror("fopen");
+        OperationHistory_log("Save file", fileName, "Failed to open CSV file", "ERROR");
+        return;
+    }
 
     if (!append) {
         fprintf(fp, "No.,ID,Name,Gender,Class,Date of Birth,Email,Score\n");
@@ -1852,20 +1916,22 @@ void saveCSVFile(ArrayList *s) {
     fclose(fp);
     printf("Data exported successfully to CSV file: %s\n", fileName);
 
-    /* Try to open automatically */
+    char des[256];
+    sprintf(des, "Saved %d students to CSV file", s->size);
+    OperationHistory_log("Save file", fileName, des, "OK");
+
     printf("You want to open file ? (y/n)\n");
     char choice[100];
-	fgets(choice, sizeof(choice), stdin);
-        choice[strcspn(choice, "\n")] = 0;
-	    switch (choice[0]) {
-        case 'y': {
-        	open_file_with_default_app(fileName);
-        	break;
- 		}
+    fgets(choice, sizeof(choice), stdin);
+    choice[strcspn(choice, "\n")] = 0;
+    switch (choice[0]) {
+        case 'y':
+            open_file_with_default_app(fileName);
+            break;
         default:
             printf("Exiting...");
-        }
     }
+}
 
 void loadCSVFile(ArrayList *s) {
     char fileName[256];
@@ -1875,15 +1941,21 @@ void loadCSVFile(ArrayList *s) {
 
     if (!file_exists(fileName)) {
         printf("File not found!\n");
+        OperationHistory_log("Load file", fileName, "CSV file not found", "ERROR");
         return;
     }
 
     FILE *fp = fopen(fileName, "r");
-    if (!fp) { perror("fopen"); return; }
+    if (!fp) {
+        perror("fopen");
+        OperationHistory_log("Load file", fileName, "Failed to open CSV file", "ERROR");
+        return;
+    }
 
     char line[1024];
-    // Bỏ dòng tiêu đề
-    fgets(line, sizeof(line), fp);
+    int beforeCount = s->size;
+
+    fgets(line, sizeof(line), fp); // skip header
 
     while (fgets(line, sizeof(line), fp)) {
         if (line[0] == '\n' || line[0] == '\r') continue;
@@ -1891,7 +1963,6 @@ void loadCSVFile(ArrayList *s) {
         Student stu;
         memset(&stu, 0, sizeof(stu));
 
-        // Giả sử CSV: ID,Name,Gender,Class,DOB,Email,Score
         char *ord = strtok(line, ",");
         char *id = strtok(NULL, ",");
         char *name = strtok(NULL, ",");
@@ -1902,44 +1973,105 @@ void loadCSVFile(ArrayList *s) {
         char *scoreStr = strtok(NULL, ",\n\r");
 
         if (!ord || !id || !name || !gender || !cls || !dob || !email || !scoreStr)
-            continue; // dòng lỗi
-		trim_inplace(ord);
+            continue;
+
+        trim_inplace(ord);
         trim_inplace(id); trim_inplace(name); trim_inplace(gender);
         trim_inplace(cls); trim_inplace(dob); trim_inplace(email); trim_inplace(scoreStr);
-        strncpy(stu.ID, id, sizeof(stu.ID)-1);
-        strncpy(stu.Name, name, sizeof(stu.Name)-1);
-        strncpy(stu.gender, gender, sizeof(stu.gender)-1);
-        strncpy(stu.Class, cls, sizeof(stu.Class)-1);
-        strncpy(stu.DOB, dob, sizeof(stu.DOB)-1);
-        strncpy(stu.email, email, sizeof(stu.email)-1);
+
+        strncpy(stu.ID, id, sizeof(stu.ID) - 1);
+        strncpy(stu.Name, name, sizeof(stu.Name) - 1);
+        strncpy(stu.gender, gender, sizeof(stu.gender) - 1);
+        strncpy(stu.Class, cls, sizeof(stu.Class) - 1);
+        strncpy(stu.DOB, dob, sizeof(stu.DOB) - 1);
+        strncpy(stu.email, email, sizeof(stu.email) - 1);
         stu.Score = atof(scoreStr);
 
         addStudentToList(s, stu);
     }
 
     fclose(fp);
-    printf("Loaded successfully! Total students: %d\n", s->size);
+    int loaded = s->size - beforeCount;
+    printf("Loaded successfully! Total students: %d (added %d)\n", s->size, loaded);
+
+    char des[256];
+    if (loaded > 0)
+        sprintf(des, "Loaded %d students from CSV file", loaded);
+    else
+        sprintf(des, "Loaded 0 students from CSV file (no valid data)");
+
+    OperationHistory_log("Load file", fileName, des, "OK");
+}
+// ================== Sub-functions for Setting ==================
+void setting_history(void) {
+    history();
+    OperationHistory_log("Setting", "History", "Opened operation history menu", "OK");
 }
 
+void display_top10(ArrayList *s) {
+    if (s->size == 0) {
+        printf("No student data available!\n");
+        OperationHistory_log("Setting", "Top 10", "No student data to display top list", "ERROR");
+        return;
+    }
+
+    printf("\n======== TOP 10 STUDENTS (Highest Scores) ========\n");
+
+    // Copy danh sách để không ảnh hưởng dữ liệu chính
+    ArrayList copy = copyList(s);
+    qsort(copy.data, (size_t)copy.size, sizeof(Student), cmp_score_desc);
+
+    int limit = (copy.size < 10) ? copy.size : 10;
+
+    ArrayList top10;
+    top10.data = malloc(sizeof(Student) * limit);
+    top10.size = limit;
+    for (int i = 0; i < limit; ++i)
+        top10.data[i] = copy.data[i];
+
+    displayStudents("all", "", "", &top10);
+
+    printf("Displayed Top %d students by score successfully!\n", limit);
+
+    char des[128];
+    sprintf(des, "Displayed Top %d students by score", limit);
+    OperationHistory_log("Setting", "Top 10", des, "OK");
+
+    free(copy.data);
+    free(top10.data);
+}
+
+
 // ================== Setting =================================
-void setting(void){
-	printf("========Menu Setting===========\n");
-	printf("1. History\n");
-	printf("Enter your choice:\n");
-	char choice[100];
-	fgets(choice, sizeof(choice), stdin);
-        choice[strcspn(choice, "\n")] = 0;
-	    switch (choice[0]) {
-        case '1': {
-        	history();
-        	break;
- 		}
-		case '0':
-            printf("Exiting...\n");
+void setting(ArrayList *s) {
+    printf("======== MENU SETTING ===========\n");
+    printf("1. History\n");
+    printf("2. View Top 10 Highest Scores (BXH)\n");
+    printf("0. Exit\n");
+    printf("Enter your choice: ");
+
+    char choice[100];
+    fgets(choice, sizeof(choice), stdin);
+    choice[strcspn(choice, "\n")] = 0;
+
+    switch (choice[0]) {
+        case '1':
+            setting_history();
             break;
+
+        case '2':
+            display_top10(s);
+            break;
+
+        case '0':
+            printf("Exiting...\n");
+            OperationHistory_log("Setting", "Menu", "User exited setting menu", "OK");
+            break;
+
         default:
             printf("Invalid choice!\n");
-        }
+            OperationHistory_log("Setting", "Menu", "Invalid setting menu choice", "ERROR");
+    }
 }
 
 // =================== History ================================
