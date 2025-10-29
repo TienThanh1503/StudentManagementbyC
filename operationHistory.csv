@@ -18,3 +18,9 @@ No.,Time,Action,Target,Description,Status
 2,29/10/2025 17:33:25,Load file,studentsData.txt,Loaded 1000 students from text file,OK
 3,29/10/2025 17:33:35,Display student,Student,Displayed matching students successfully,OK
 4,29/10/2025 17:33:35,Setting,Top 10,Displayed Top 10 students by score,OK
+1,29/10/2025 17:47:26,Load file,studentsData.txt,Loaded 1000 students from text file,OK
+2,29/10/2025 17:47:32,Setting,Menu,Invalid setting menu choice,ERROR
+1,29/10/2025 18:56:31,Load file,studentsData.txt,Loaded 1000 students from text file,OK
+2,29/10/2025 18:56:32,Display student,Student,Displayed matching students successfully,OK
+3,29/10/2025 18:56:36,Setting,Statistics,Displayed class statistics,OK
+4,29/10/2025 18:56:36,Setting,Menu,Invalid setting menu choice,ERROR

@@ -2040,13 +2040,45 @@ void display_top10(ArrayList *s) {
     free(copy.data);
     free(top10.data);
 }
+void statistics(ArrayList *s) {
+    if (s->size == 0) {
+        printf("No data!\n");
+        return;
+    }
 
+	    float sum = 0, maxScore = s->data[0].Score, minScore = s->data[0].Score;
+	int countExcellent = 0, countGood = 0, countAverage = 0, countWeak = 0;
+	
+	for (int i = 0; i < s->size; i++) {
+	    float score = s->data[i].Score;
+	    sum += score;
+	    if (score > maxScore) maxScore = score;
+	    if (score < minScore) minScore = score;
+	
+	    if (score >= 8) countExcellent++;
+	    else if (score >= 7) countGood++;
+	    else if (score >= 5) countAverage++;
+	    else countWeak++;
+	}
+	
+	printf("\n===== CLASS STATISTICS =====\n");
+	printf("Total students: %d\n", s->size);
+	printf("Average Score: %.2f\n", sum / s->size);
+	printf("Highest Score: %.2f\n", maxScore);
+	printf("Lowest Score: %.2f\n", minScore);
+	printf("Excellent: %d | Good: %d | Average: %d | Weak: %d\n",
+	       countExcellent, countGood, countAverage, countWeak);
+	
+	OperationHistory_log("Setting", "Statistics", "Displayed class statistics", "OK");
+
+}
 
 // ================== Setting =================================
 void setting(ArrayList *s) {
     printf("======== MENU SETTING ===========\n");
     printf("1. History\n");
     printf("2. View Top 10 Highest Scores (BXH)\n");
+    printf("3. Statistics\n");
     printf("0. Exit\n");
     printf("Enter your choice: ");
 
@@ -2067,7 +2099,8 @@ void setting(ArrayList *s) {
             printf("Exiting...\n");
             OperationHistory_log("Setting", "Menu", "User exited setting menu", "OK");
             break;
-
+		case '3':
+			statistics(s);
         default:
             printf("Invalid choice!\n");
             OperationHistory_log("Setting", "Menu", "Invalid setting menu choice", "ERROR");
