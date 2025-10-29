@@ -1,2 +1,6 @@
 No.,Time,Action,Target,Description,Status
-1,20/10/2025 22:26:32,Display student,Student,No matching student found!,ERROR
+1,29/10/2025 17:06:44,Display student,Student,No matching students found,ERROR
+2,29/10/2025 17:07:21,Display student,Student,Displayed matching students successfully,OK
+3,29/10/2025 17:07:26,Delete student,Student,Delete by Email: "thanh" -> No student found,ERROR
+4,29/10/2025 17:07:33,Display student,Student,Displayed matching students successfully,OK
+5,29/10/2025 17:07:37,Delete student,Student,Delete by Gender: "male" -> deleted ID SE207644  Name Do Minh Khoa,OK

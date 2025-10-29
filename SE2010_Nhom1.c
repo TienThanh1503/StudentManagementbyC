@@ -906,12 +906,12 @@ void displayStudents(const char *option, const char *data, const char *compariso
         if (ln > maxLengthOfNames)  maxLengthOfNames  = ln;
         if (le > maxLengthOfEmails) maxLengthOfEmails = le;
     }
-    int totalWidth = 64 + maxLengthOfNames + maxLengthOfEmails;
+    int totalWidth = 80 + maxLengthOfNames + maxLengthOfEmails;
 
     /* top bar */
     print_repeat('=', totalWidth);
 
-    /* header line */
+    /* header line – generate centered strings and free immediately after printing */
     char *cNo = center("No.", 5);
     char *cID = center("ID", 10);
     char *cName = center("Name", maxLengthOfNames);
@@ -921,7 +921,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
     char *cEmail = center("Email", maxLengthOfEmails);
     char *cScore = center("Score", 8);
 
-    printf("|%s|%s|%s|%s|%s|%s|%s|%s|\n",
+    printf("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
            cNo, cID, cName, cGender, cClass, cDOB, cEmail, cScore);
 
     free(cNo); free(cID); free(cName); free(cGender); free(cClass); free(cDOB); free(cEmail); free(cScore);
@@ -936,38 +936,20 @@ void displayStudents(const char *option, const char *data, const char *compariso
 
         if (strcmp(option, "all") == 0 && (data == NULL || *data == '\0')) {
             shouldDisplay = 1;
-        }
-        else if (strcmp(option, "ID") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->ID, data);
-            else
-                shouldDisplay = str_ieq(st->ID, data);
-        }
-        else if (strcmp(option, "Name") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->Name, data);
-            else
-                shouldDisplay = str_ieq(st->Name, data);
-        }
-        else if (strcmp(option, "Gender") == 0 && str_ieq(st->gender, data)) {
+            
+        } else if (strcmp(option, "ID") == 0 && str_ieq(st->ID, data)) {
             shouldDisplay = 1;
-        }
-        else if (strcmp(option, "Class") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->Class, data);
-            else
-                shouldDisplay = str_ieq(st->Class, data);
-        }
-        else if (strcmp(option, "DOB") == 0 && strcmp(st->DOB, data) == 0) {
+        } else if (strcmp(option, "Name") == 0 && contains_ignore_case(st->Name, data)) {
             shouldDisplay = 1;
-        }
-        else if (strcmp(option, "Email") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->email, data);
-            else
-                shouldDisplay = str_ieq(st->email, data);
-        }
-        else if (strcmp(option, "Score") == 0) {
+        } else if (strcmp(option, "Gender") == 0 && str_ieq(st->gender, data)) {
+            shouldDisplay = 1;
+        } else if (strcmp(option, "Class") == 0 && str_ieq(st->Class, data)) {
+            shouldDisplay = 1;
+        } else if (strcmp(option, "DOB") == 0 && strcmp(st->DOB, data) == 0) {
+            shouldDisplay = 1;
+        } else if (strcmp(option, "Email") == 0 && contains_ignore_case(st->email, data)) {
+            shouldDisplay = 1;
+        } else if (strcmp(option, "Score") == 0) {
             char *endp = NULL;
             double doubleData = strtod(data ? data : "", &endp);
             if (endp && (*endp == '\0')) {
@@ -981,6 +963,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
 
         if (shouldDisplay) {
             ++cnt;
+            /* build centered cells */
             char numbuf[32]; snprintf(numbuf, sizeof(numbuf), "%d", cnt);
             char scbuf[32];  snprintf(scbuf, sizeof(scbuf),  "%.2f", st->Score);
 
@@ -991,7 +974,7 @@ void displayStudents(const char *option, const char *data, const char *compariso
             char *cDOB2    = center(st->DOB, 14);
             char *cScore2  = center(scbuf, 8);
 
-            printf("|%s|%s|%-*s|%s|%s|%s|%-*s|%s|\n",
+            printf("| %s | %s | %-*s | %s | %s | %s | %-*s | %s |\n",
                    cNo2, cID2,
                    maxLengthOfNames,  st->Name,
                    cGender2,
@@ -1001,20 +984,20 @@ void displayStudents(const char *option, const char *data, const char *compariso
                    cScore2);
 
             free(cNo2); free(cID2); free(cGender2); free(cClass2); free(cDOB2); free(cScore2);
+
+            if (strcmp(option, "ID") == 0) break; /* ID is unique */
         }
     }
 
     if (cnt == 0) {
         printf("No matching students found!\n");
-        OperationHistory_log("Display student", "Student", "No matching students found", "ERROR");
-    } else {
-        OperationHistory_log("Display student", "Student", "Displayed matching students successfully", "OK");
+        OperationHistory_log("Display student", "Student", "Display all student", "OK");
     }
+    else OperationHistory_log("Display student", "Student", "No matching student found!", "ERROR");
 
     /* bottom bar */
     print_repeat('=', totalWidth);
 }
-
 
 void search(ArrayList *s) {
     printf("\n=== SEARCH STUDENT MENU ===\n");
@@ -1028,175 +1011,91 @@ void search(ArrayList *s) {
     printf("0. Return to main menu\n");
     printf("Enter your choice: ");
 
-    char choice[32]; 
-    read_line(choice, sizeof(choice));
-    char data[256]; 
-    strcpy(data, "Search with ");
-    int success = 0; // ✅ flag để kiểm tra có chạy thành công không
-
+    char choice[32]; read_line(choice, sizeof(choice));
+    char data[100];
+    strcpy(data, "Search score with ");
+	
     if (strcmp(choice, "1") == 0) {
         char *id = ID(s->data, (size_t)s->size, 0);
-        snprintf(data, sizeof(data), "Search by ID: %s", id);
-        displayStudents("ID", id, "contains", s);
-        success = 1;
+        sprintf(data, "ID");
+        displayStudents("ID", id, "=", s);
         free(id);
-
     } else if (strcmp(choice, "2") == 0) {
         char *nm = Name();
-        snprintf(data, sizeof(data), "Search by Name: %s", nm);
-        displayStudents("Name", nm, "contains", s);
-        success = 1;
+        displayStudents("Name", nm, "=", s);
+        sprintf(data, "Name");
         free(nm);
-
     } else if (strcmp(choice, "3") == 0) {
         char *cl = Class();
-        snprintf(data, sizeof(data), "Search by Class: %s", cl);
-        displayStudents("Class", cl, "contains", s);
-        success = 1;
+        displayStudents("Class", cl, "=", s);
+        sprintf(data, "Class");
         free(cl);
-
     } else if (strcmp(choice, "4") == 0) {
         char option[32];
+        sprintf(data, "Score ");
         printf("\n=== SEARCH BY SCORE ===\n");
         printf("1. Score >\n2. Score <\n3. Score <=\n4. Score >=\n5. Score =\n0. Return\n");
         printf("Enter your choice: ");
         read_line(option, sizeof(option));
-
         if (strcmp(option, "0") == 0) { 
-            printf("Returning to main menu...\n");
-            OperationHistory_log("Search student", "Student", "Return to menu", "OK");
-            return;
-        }
-
+			printf("Returning to main menu...\n");
+			OperationHistory_log("Search student", "Student", "Return to menu", "OK");
+			return;
+		}
+        printf("Enter Score: ");
         double sc = Score();
         char buf[32]; snprintf(buf, sizeof(buf), "%.4f", sc);
-
-        const char *op = NULL;
-        if      (strcmp(option, "1")==0) op = ">";
-        else if (strcmp(option, "2")==0) op = "<";
-        else if (strcmp(option, "3")==0) op = "<=";
-        else if (strcmp(option, "4")==0) op = ">=";
-        else if (strcmp(option, "5")==0) op = "=";
-        else {
-            printf("Invalid choice!\n");
-            OperationHistory_log("Search student", "Student", "Invalid score search option", "ERROR");
-            return;
-        }
-
-        snprintf(data, sizeof(data), "Search by Score %s %.2f", op, sc);
-        displayStudents("Score", buf, op, s);
-        success = 1;
-
+        if      (strcmp(option, "1")==0) {
+        	displayStudents("Score", buf, ">",  s);
+        	sprintf(data, ">.");
+		}
+        else if (strcmp(option, "2")==0) {
+        	displayStudents("Score", buf, "<",  s);
+        	sprintf(data, "<.");
+		}
+        else if (strcmp(option, "3")==0) {
+        	displayStudents("Score", buf, "<=", s);
+        	sprintf(data, "<=.");
+		}
+        else if (strcmp(option, "4")==0) {
+        	displayStudents("Score", buf, ">=", s);
+        	sprintf(data, ">=.");
+		}
+        else if (strcmp(option, "5")==0) {
+        	displayStudents("Score", buf, "=",  s);
+        	sprintf(data, "=.");
+		}
+        else   {
+        	printf("Invalid choice!\n");
+        	OperationHistory_log("Search student", "Student", "Invalid choice", "ERROR");
+        	return;
+		}
+		
     } else if (strcmp(choice, "5") == 0) {
         char *d = DOB();
-        snprintf(data, sizeof(data), "Search by Date of Birth: %s", d);
         displayStudents("DOB", d, "=", s);
-        success = 1;
+        strcpy(data, "Date of Birth");
         free(d);
-
     } else if (strcmp(choice, "6") == 0) {
         char *g = gender();
-        snprintf(data, sizeof(data), "Search by Gender: %s", g);
+        strcpy(data, "Gender");
         displayStudents("Gender", g, "=", s);
-        success = 1;
         free(g);
-
     } else if (strcmp(choice, "7") == 0) {
         char *em = email(s->data, (size_t)s->size, 0);
-        snprintf(data, sizeof(data), "Search by Email: %s", em);
-        displayStudents("Email", em, "contains", s);
-        success = 1;
+        strcpy(data, "Email");
+        displayStudents("Email", em, "=", s);
         free(em);
-
     } else if (strcmp(choice, "0") == 0) {
+    	strcpy(data, "Return to menu!");
         printf("Returning to main menu...\n");
-        OperationHistory_log("Search student", "Student", "Return to menu", "OK");
         return;
-
     } else {
         printf("Invalid choice!\n");
         OperationHistory_log("Search student", "Student", "Invalid choice", "ERROR");
         return;
     }
-
-    // ✅ Ghi log chính xác theo kết quả
-    if (success)
-        OperationHistory_log("Search student", "Student", data, "OK");
-    else
-        OperationHistory_log("Search student", "Student", data, "ERROR");
-}
-
-// Tạo danh sách các index student match với điều kiện tìm kiếm,
-// theo đúng logic giống displayStudents(...) đang dùng.
-static int build_match_list(
-    const ArrayList *s,
-    const char *option,               // "ID", "Name", "Class", ...
-    const char *data,                 // keyword / chuỗi so sánh / điểm dạng string
-    const char *comparisonOperator,   // "contains", "=", ">", "<", "<=", ">="
-    int out_idx[],                    // output: danh sách index thực trong s->data
-    int max_out                       // kích thước tối đa của out_idx
-) {
-    int cnt = 0;
-
-    for (int i = 0; i < s->size; ++i) {
-        const Student *st = &s->data[i];
-        int shouldDisplay = 0;
-
-        if (strcmp(option, "ID") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->ID, data);
-            else
-                shouldDisplay = str_ieq(st->ID, data);
-
-        } else if (strcmp(option, "Name") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->Name, data);
-            else
-                shouldDisplay = str_ieq(st->Name, data);
-
-        } else if (strcmp(option, "Gender") == 0) {
-            // displayStudents() hiện dùng so sánh đúng/đủ cho Gender (str_ieq),
-            // không hỗ trợ "contains". Vì vậy ở đây ta cứ dùng str_ieq.
-            shouldDisplay = str_ieq(st->gender, data);
-
-        } else if (strcmp(option, "Class") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->Class, data);
-            else
-                shouldDisplay = str_ieq(st->Class, data);
-
-        } else if (strcmp(option, "DOB") == 0) {
-            // displayStudents() dùng strcmp exact cho DOB
-            shouldDisplay = (strcmp(st->DOB, data) == 0);
-
-        } else if (strcmp(option, "Email") == 0) {
-            if (strcmp(comparisonOperator, "contains") == 0)
-                shouldDisplay = contains_ignore_case(st->email, data);
-            else
-                shouldDisplay = str_ieq(st->email, data);
-
-        } else if (strcmp(option, "Score") == 0) {
-            // giống logic displayStudents() cho Score
-            char *endp = NULL;
-            double doubleData = strtod(data ? data : "", &endp);
-            if (endp && (*endp == '\0')) {
-                if      (strcmp(comparisonOperator, "=" ) == 0) shouldDisplay = (st->Score == doubleData);
-                else if (strcmp(comparisonOperator, "<" ) == 0) shouldDisplay = (st->Score <  doubleData);
-                else if (strcmp(comparisonOperator, ">" ) == 0) shouldDisplay = (st->Score >  doubleData);
-                else if (strcmp(comparisonOperator, "<=") == 0) shouldDisplay = (st->Score <= doubleData);
-                else if (strcmp(comparisonOperator, ">=") == 0) shouldDisplay = (st->Score >= doubleData);
-            }
-        }
-
-        if (shouldDisplay) {
-            if (cnt < max_out) {
-                out_idx[cnt] = i; // lưu index thực trong s->data
-            }
-            cnt++;
-        }
-    }
-
-    return cnt; // số lượng match
+    OperationHistory_log("Search student", "Student", data, "ERROR");
 }
 
 void delete(ArrayList *s) {
@@ -1212,245 +1111,189 @@ void delete(ArrayList *s) {
     printf("0. Exit\n");
     printf("Enter your choice: ");
 
-    char choice[32];
-    read_line(choice, sizeof(choice));
-    trim_inplace(choice);
+    char choice[32]; read_line(choice, sizeof(choice));
+    char *data = NULL;
+    char des[100];
+    int count = 0;
+        
 
-    // Thoát
     if (strcmp(choice, "0") == 0) {
         printf("Exitting to Menu...\n");
         return;
     }
 
-    // Xóa toàn bộ giữ nguyên hành vi cũ
-    if (strcmp(choice, "8") == 0) {
+    if (strcmp(choice, "1") == 0) {
+        char idbuf[128];
+        strcpy(idbuf,ID(s->data, (size_t)s->size, 0));
+
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].ID, idbuf)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with ID %s", count, idbuf);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with ID %s", idbuf);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}  
+		free(data);        
+        return;
+    }
+
+    else if (strcmp(choice, "2") == 0) {
+        data = Name();
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].Name, data)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with name %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with name %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
+        free(data); return;
+    }
+
+    else if (strcmp(choice, "3") == 0) {
+        data = Class();
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].Class, data)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with class %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with name %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
+        free(data); return;
+    }
+
+    else if (strcmp(choice, "4") == 0) {
+        char option[8];
+            printf("\n=== DELETE BY SCORE ===\n");
+            printf("1. Score >\n2. Score <\n3. Score <=\n4. Score >=\n5. Score =\n0. Return\n");
+            printf("Enter your choice: ");
+            read_line(option, sizeof(option));
+            if (strcmp(option, "0") == 0) { printf("Returning to main menu...\n"); return; }
+            if (!(strlen(option)==1 && option[0]>='1' && option[0]<='5')) {
+                printf("Invalid choice! Please enter from 1–5.\n");
+                return;
+            }
+            double sc = Score();
+            int cnt = 0;
+            for (int i = s->size - 1; i >= 0; --i) {
+                double v = s->data[i].Score;
+                if      (strcmp(option,"1")==0 && v >  sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"2")==0 && v <  sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"3")==0 && v <= sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"4")==0 && v >= sc) { removeAt(s, i); cnt++; }
+                else if (strcmp(option,"5")==0 && v == sc) { removeAt(s, i); cnt++; }
+            }
+            if (cnt > 0) {
+        	printf("Deleted %d student(s) successfully!\n", cnt);
+        	if      (strcmp(option,"1")==0) {
+				sprintf(des, "Delete %d student(s) with score > %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"2")==0) {
+				sprintf(des, "Delete %d student(s) with score < %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"3")==0) {
+				sprintf(des, "Delete %d student(s) with score <= %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"4")==0) {
+				sprintf(des, "Delete %d student(s) with score >= %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+			else if      (strcmp(option,"5")==0) {
+				sprintf(des, "Delete %d student(s) with score = %.2lf", cnt, sc);
+        		OperationHistory_log("Delete student", "Student", des, "OK");
+			}
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with score %.2lf", sc);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}  
+        return;
+    }
+
+    else if (strcmp(choice, "5") == 0) {
+        data = DOB();
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].DOB, data)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with Date of Birth %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with Date of Birth %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}          
+        free(data); return;
+    }
+
+    else if (strcmp(choice, "6") == 0) {
+        data = gender();
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].gender, data)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with gender %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with gender %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}    
+        free(data); return;
+    }
+
+    else if (strcmp(choice, "7") == 0) {
+        data = email(s->data, (size_t)s->size, 0); 
+        for (int i = s->size - 1; i >= 0; --i) {
+            if (str_ieq(s->data[i].email, data)) { removeAt(s, i); count++; }
+        }
+        if (count > 0) {
+        	printf("Deleted %d student(s) successfully!\n", count);
+        	sprintf(des, "Delete %d student(s) with email %s", count, data);
+        	OperationHistory_log("Delete student", "Student", des, "OK");
+		}
+        else {
+        	printf("No student found with that ID!\n");
+        	sprintf(des, "No student found with email %s", data);
+        	OperationHistory_log("Delete student", "Student", des, "ERROR");
+		}    
+        free(data); return;
+    }
+
+    else if (strcmp(choice, "8") == 0) {
         clearList(s);
         printf("All student data deleted successfully!\n");
-        OperationHistory_log("Delete student", "Student",
-                             "Delete all student data", "OK");
+        OperationHistory_log("Delete student", "Student", "Delete all student.", "OK");
         return;
     }
-
-    // Các biến dùng chung
-    char keyword[128];
-    keyword[0] = '\0';
-
-    char desc[256];
-    int found_idx[1024];  // ánh xạ No. -> index thật trong s->data
-    int found_count = 0;
-
-    /***************
-     * CASE 1,2,3,5,6,7: so sánh chuỗi
-     ***************/
-    if (strcmp(choice, "1") == 0 ||  // ID
-        strcmp(choice, "2") == 0 ||  // Name
-        strcmp(choice, "3") == 0 ||  // Class
-        strcmp(choice, "5") == 0 ||  // DOB
-        strcmp(choice, "6") == 0 ||  // Gender
-        strcmp(choice, "7") == 0) {  // Email
-
-        const char *optionField =
-            (strcmp(choice, "1")==0) ? "ID" :
-            (strcmp(choice, "2")==0) ? "Name" :
-            (strcmp(choice, "3")==0) ? "Class" :
-            (strcmp(choice, "5")==0) ? "DOB" :
-            (strcmp(choice, "6")==0) ? "Gender" :
-                                       "Email";
-
-        // Chọn comparisonOperator phù hợp với displayStudents()
-        // - với ID/Name/Class/Email => "contains" để hỗ trợ gõ 1 phần ("th")
-        // - với DOB/Gender displayStudents không hỗ trợ "contains", chỉ so sánh chính xác
-        const char *cmpOp =
-            (strcmp(choice, "5")==0) ? "=" :
-            (strcmp(choice, "6")==0) ? "=" :
-                                       "contains";
-
-        printf("Enter keyword for %s (or 0 to cancel): ", optionField);
-        read_line(keyword, sizeof(keyword));
-        trim_inplace(keyword);
-
-        if (strcmp(keyword, "0") == 0 || keyword[0] == '\0') {
-            printf("Canceled. Returning to menu.\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by %s: user canceled before listing", optionField);
-            OperationHistory_log("Delete student", "Student", desc, "OK");
-            return;
-        }
-
-        // Tìm match theo đúng logic displayStudents()
-        found_count = build_match_list(
-            s,
-            optionField,
-            keyword,
-            cmpOp,
-            found_idx,
-            (int)(sizeof(found_idx)/sizeof(found_idx[0]))
-        );
-
-        if (found_count == 0) {
-            printf("No matching students found!\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by %s: \"%s\" → No student found",
-                     optionField, keyword);
-            OperationHistory_log("Delete student", "Student", desc, "ERROR");
-            return;
-        }
-
-        // In danh sách bằng displayStudents() cho user xem
-        // Bảng sẽ đánh No. = 1..found_count theo đúng thứ tự duyệt
-        displayStudents(optionField, keyword, cmpOp, s);
-
-        // Hỏi người dùng muốn xóa mục số mấy
-        printf("Enter the number (1-%d) to delete, or 0 to cancel: ", found_count);
-
-        char pickbuf[32];
-        read_line(pickbuf, sizeof(pickbuf));
-        trim_inplace(pickbuf);
-
-        int pick = atoi(pickbuf);
-        if (pick == 0) {
-            printf("Canceled. Returning to menu.\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by %s: \"%s\" → User canceled after listing",
-                     optionField, keyword);
-            OperationHistory_log("Delete student", "Student", desc, "OK");
-            return;
-        }
-        if (pick < 1 || pick > found_count) {
-            printf("Invalid selection!\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by %s: \"%s\" → Invalid selection index",
-                     optionField, keyword);
-            OperationHistory_log("Delete student", "Student", desc, "ERROR");
-            return;
-        }
-
-        // Lấy index thật trong ArrayList
-        int realIndex = found_idx[pick - 1];
-        Student removed = s->data[realIndex]; // copy để log trước khi xóa
-
-        // Xóa đúng 1 student
-        removeAt(s, realIndex);
-
-        printf("Deleted 1 student successfully!\n");
-
-        snprintf(desc, sizeof(desc),
-                 "Delete by %s: \"%s\" → deleted ID %s, Name %s",
-                 optionField, keyword, removed.ID, removed.Name);
-        OperationHistory_log("Delete student", "Student", desc, "OK");
-
-        return;
-    }
-
-    /***************
-     * CASE 4: Score
-     ***************/
-    if (strcmp(choice, "4") == 0) {
-        char option[8];
-        printf("\n=== DELETE BY SCORE ===\n");
-        printf("1. Score >\n");
-        printf("2. Score <\n");
-        printf("3. Score <=\n");
-        printf("4. Score >=\n");
-        printf("5. Score =\n");
-        printf("0. Return\n");
-        printf("Enter your choice: ");
-
-        read_line(option, sizeof(option));
-        trim_inplace(option);
-
-        if (strcmp(option, "0") == 0) {
-            printf("Returning to main menu...\n");
-            OperationHistory_log("Delete student", "Student",
-                                 "Delete by Score: user canceled at condition menu", "OK");
-            return;
-        }
-
-        if (!(strlen(option)==1 && option[0]>='1' && option[0]<='5')) {
-            printf("Invalid choice! Please enter from 1–5.\n");
-            OperationHistory_log("Delete student", "Student",
-                                 "Delete by Score: invalid condition", "ERROR");
-            return;
-        }
-
-        double sc = Score(); // người dùng nhập điểm tham chiếu
-        char scoreStr[32];
-        snprintf(scoreStr, sizeof(scoreStr), "%.4f", sc);
-
-        const char *cmpOp =
-            (strcmp(option,"1")==0) ? ">"  :
-            (strcmp(option,"2")==0) ? "<"  :
-            (strcmp(option,"3")==0) ? "<=" :
-            (strcmp(option,"4")==0) ? ">=" : "=";
-
-        // Tìm match theo điều kiện điểm y như displayStudents("Score", buf, cmpOp, s)
-        found_count = build_match_list(
-            s,
-            "Score",
-            scoreStr,
-            cmpOp,
-            found_idx,
-            (int)(sizeof(found_idx)/sizeof(found_idx[0]))
-        );
-
-        if (found_count == 0) {
-            printf("No matching students found!\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by Score %s %.2f → No student found",
-                     cmpOp, sc);
-            OperationHistory_log("Delete student", "Student", desc, "ERROR");
-            return;
-        }
-
-        // In danh sách bằng displayStudents() cho user xem
-        displayStudents("Score", scoreStr, cmpOp, s);
-
-        // Hỏi user xóa mục nào
-        printf("Enter the number (1-%d) to delete, or 0 to cancel: ", found_count);
-
-        char pickbuf[32];
-        read_line(pickbuf, sizeof(pickbuf));
-        trim_inplace(pickbuf);
-
-        int pick = atoi(pickbuf);
-        if (pick == 0) {
-            printf("Canceled. Returning to menu.\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by Score %s %.2f → User canceled after listing",
-                     cmpOp, sc);
-            OperationHistory_log("Delete student", "Student", desc, "OK");
-            return;
-        }
-        if (pick < 1 || pick > found_count) {
-            printf("Invalid selection!\n");
-            snprintf(desc, sizeof(desc),
-                     "Delete by Score %s %.2f → Invalid selection index",
-                     cmpOp, sc);
-            OperationHistory_log("Delete student", "Student", desc, "ERROR");
-            return;
-        }
-
-        // Xóa 1 student theo lựa chọn
-        int realIndex = found_idx[pick - 1];
-        Student removed = s->data[realIndex];
-        removeAt(s, realIndex);
-
-        printf("Deleted 1 student successfully!\n");
-
-        snprintf(desc, sizeof(desc),
-                 "Delete by Score %s %.2f → deleted ID %s, Name %s",
-                 cmpOp, sc, removed.ID, removed.Name);
-        OperationHistory_log("Delete student", "Student", desc, "OK");
-
-        return;
-    }
-
-    // Nếu tới đây mà không match case nào:
     printf("Invalid choice!\n");
-    OperationHistory_log("Delete student", "Student",
-                         "Invalid delete menu choice", "ERROR");
+    OperationHistory_log("Delete student", "Student", "Invalid choice", "OK");
 }
-
 
 void update(ArrayList *s) {
     int idx = 0;
@@ -1792,7 +1635,7 @@ void loadTextFile(ArrayList *s) {
     }
 
     fclose(fp);
-    printf("Loaded successfully! Total students: %d\n", s->size);
+    printf("✅ Loaded successfully! Total students: %d\n", s->size);
 }	
 
 
@@ -1943,35 +1786,30 @@ void setting(void){
 }
 
 // =================== History ================================
-void history(void) {
-    printf("Menu History: \n");
-    printf("1. Open operationHistory in Excel (Read-Only)\n");
-    printf("2. Clear all data in operation History\n");
-    printf("Enter your choice:\n");
-
-    char choice[100];
-    fgets(choice, sizeof(choice), stdin);
-    choice[strcspn(choice, "\n")] = 0;
-
-    switch (choice[0]) {
+void history(void){
+	printf("Menu History: \n");
+	printf("1. Open operationHistory in Excel\n");
+	printf("2. Clear all data in operation History\n");
+	printf("Enter your choice:\n");
+	char choice[100];
+	fgets(choice, sizeof(choice), stdin);
+        choice[strcspn(choice, "\n")] = 0;
+	    switch (choice[0]) {
         case '1': {
-            // ✅ Gọi Excel ở chế độ đọc
-            system("start excel.exe /r \"operationHistory.csv\"");
-            printf("Opened operationHistory.csv in Excel (read-only mode).\n");
-            break;
-        }
-        case '2': {
-            OperationHistory_clear();
-            break;
-        }
-        case '0':
+        	open_file_with_default_app("operationHistory.csv");
+        	break;
+ 		}
+ 		case '2': {
+ 			OperationHistory_clear();
+			break;
+		 }
+		case '0':
             printf("Exiting...\n");
             break;
         default:
             printf("Invalid choice!\n");
+        }
     }
-}
-
 
 /* ========= Internal utilities (static) ========= */
 static void OperationHistory_at_exit(void) {
@@ -2049,51 +1887,26 @@ void OperationHistory_init(void) {
     initialized = 1;
 }
 
-// Helper: loại bỏ dấu phẩy, \r\n và thay mũi tên UTF-8 bằng "->"
-static void sanitize(char *dst, size_t dstsz, const char *src) {
-    size_t j = 0;
-    for (size_t i = 0; src && src[i] && j < dstsz - 1; ++i) {
-        unsigned char c = (unsigned char)src[i];
 
-        // UTF-8 for '→' is E2 86 92
-        if (c == 0xE2 && (unsigned char)src[i+1] == 0x86 && (unsigned char)src[i+2] == 0x92) {
-            if (j < dstsz - 1) dst[j++] = '-';
-            if (j < dstsz - 1) dst[j++] = '>';
-            i += 2; // skip the rest of the sequence
-            continue;
-        }
-
-        if (c == ',' || c == '\r' || c == '\n') {
-            dst[j++] = ' ';              // thay bằng space
-        } else if (c < 32 || c == 127) { // ký tự điều khiển
-            dst[j++] = ' ';
-        } else {
-            dst[j++] = (char)c;
-        }
-    }
-    dst[j] = '\0';
-}
 
 void OperationHistory_log(const char *action,
                           const char *target,
                           const char *desc,
                           const char *status) {
-    FILE *f = fopen(FILE_NAME, "a");
-    if (!f) { printf("Cannot write log: file may be open in another program.\n"); return; }
+    ensure_initialized();
+    if (!bw) {
+        fprintf(stderr, "Error writing log: stream not open\n");
+        return;
+    }
 
     count++;
-    char timebuf[32]; current_time_str(timebuf, sizeof timebuf);
+    char timebuf[32];
+    current_time_str(timebuf, sizeof timebuf);
 
-    char a[256], t[256], d[1024], s[128];
-    sanitize(a, sizeof a, action);
-    sanitize(t, sizeof t, target);
-    sanitize(d, sizeof d, desc);
-    sanitize(s, sizeof s, status);
-
-    fprintf(f, "%d,%s,%s,%s,%s,%s\n", count, timebuf, a, t, d, s);
-    fclose(f);
+    fprintf(bw, "%d,%s,%s,%s,%s,%s\n",
+            count, timebuf, action, target, desc, status);
+    fflush(bw); 
 }
-
 
 void OperationHistory_close(void) {
     OperationHistory_at_exit();
